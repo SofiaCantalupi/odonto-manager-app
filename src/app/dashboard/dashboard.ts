@@ -1,0 +1,58 @@
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { LucideAngularModule, Calendar, Users, FileText, Settings, Plus } from 'lucide-angular';
+
+interface User {
+  name: string;
+  email: string;
+  avatar: string;
+  role: string;
+}
+
+interface MenuItem {
+  label: string;
+  icon: any;
+  route: string;
+  active: boolean;
+}
+
+@Component({
+  selector: 'app-dashboard',
+  imports: [CommonModule, LucideAngularModule],
+  templateUrl: './dashboard.html',
+  styleUrl: './dashboard.css'
+})
+export class DashboardComponent {
+  // Icons
+  readonly Calendar = Calendar;
+  readonly Users = Users;
+  readonly FileText = FileText;
+  readonly Settings = Settings;
+  readonly Plus = Plus;
+
+  // Mock current user
+  currentUser: User = {
+    name: 'Dr. Sarah Johnson',
+    email: 'sarah.johnson@dental.com',
+    avatar: 'https://ui-avatars.com/api/?name=Sarah+Johnson&background=0D8ABC&color=fff',
+    role: 'Dentist'
+  };
+
+  // Navigation menu items
+  menuItems: MenuItem[] = [
+    { label: 'Agenda', icon: Calendar, route: '/agenda', active: true },
+    { label: 'Patients', icon: Users, route: '/patients', active: false },
+    { label: 'Estimates', icon: FileText, route: '/estimates', active: false },
+    { label: 'Settings', icon: Settings, route: '/settings', active: false }
+  ];
+
+  onMenuItemClick(item: MenuItem): void {
+    this.menuItems.forEach(menuItem => menuItem.active = false);
+    item.active = true;
+  }
+
+  onCreateNewPatient(): void {
+    console.log('Creating new patient...');
+    // Add your logic here
+  }
+}
