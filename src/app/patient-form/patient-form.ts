@@ -1,0 +1,194 @@
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Subject, takeUntil } from 'rxjs';
+
+// Interfaces for strict typing
+interface PersonalData {
+  firstName: string;
+  lastName: string;
+  birthDate: string;
+  age: number;
+  address: string;
+  phone: string;
+}
+
+interface InsuranceInfo {
+  hasInsurance: boolean;
+  insuranceName: string;
+  affiliateNumber: string;
+}
+
+interface DentalRecord {
+  pathologies: string;
+  allergies: string;
+  medication: string;
+}
+
+export interface Patient {
+  personalData: PersonalData;
+  insuranceInfo: InsuranceInfo;
+  dentalRecord: DentalRecord;
+}
+
+// Form type for strict typing
+interface PatientFormType {
+  personalData: FormGroup<{
+    firstName: import('@angular/forms').FormControl<string>;
+    lastName: import('@angular/forms').FormControl<string>;
+    birthDate: import('@angular/forms').FormControl<string>;
+    age: import('@angular/forms').FormControl<number>;
+    address: import('@angular/forms').FormControl<string>;
+    phone: import('@angular/forms').FormControl<string>;
+  }>;
+  insuranceInfo: FormGroup<{
+    hasInsurance: import('@angular/forms').FormControl<boolean>;
+    insuranceName: import('@angular/forms').FormControl<string>;
+    affiliateNumber: import('@angular/forms').FormControl<string>;
+  }>;
+  dentalRecord: FormGroup<{
+    pathologies: import('@angular/forms').FormControl<string>;
+    allergies: import('@angular/forms').FormControl<string>;
+    medication: import('@angular/forms').FormControl<string>;
+  }>;
+}
+
+@Component({
+  selector: 'app-patient-form',
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './patient-form.html',
+  styleUrl: './patient-form.css',
+})
+export class PatientFormComponent implements OnInit, OnDestroy {
+  patientForm!: FormGroup<PatientFormType>;
+  private destroy$ = new Subject<void>();
+
+  constructor(private fb: FormBuilder) {}
+
+  ngOnInit(): void {
+    this.initForm();
+    this.setupInsuranceWatcher();
+    this.setupAgeCalculation();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private initForm(): void {
+    this.patientForm = this.fb.group({
+      personalData: this.fb.group({
+        firstName: this.fb.nonNullable.control('', [Validators.required, Validators.minLength(2)]),
+        lastName: this.fb.nonNullable.control('', [Validators.required, Validators.minLength(2)]),
+        birthDate: this.fb.nonNullable.control('', [Validators.required]),
+        age: this.fb.nonNullable.control({ value: 0, disabled: true }),
+        address: this.fb.nonNullable.control('', [Validators.required]),
+        phone: this.fb.nonNullable.control('', [Validators.required, Validators.pattern(/^\+?[\d\s-]{10,}$/)]),
+      }),
+      insuranceInfo: this.fb.group({
+        hasInsurance: this.fb.nonNullable.control(false),
+        insuranceName: this.fb.nonNullable.control(''),
+        affiliateNumber: this.fb.nonNullable.control(''),
+      }),
+      dentalRecord: this.fb.group({
+        pathologies: this.fb.nonNullable.control(''),
+        allergies: this.fb.nonNullable.control(''),
+        medication: this.fb.nonNullable.control(''),
+      }),
+    }) as FormGroup<PatientFormType>;
+  }
+
+  private setupInsuranceWatcher(): void {
+    const insuranceGroup = this.patientForm.get('insuranceInfo') as FormGroup;
+    const hasInsuranceControl = insuranceGroup.get('hasInsurance');
+    const insuranceNameControl = insuranceGroup.get('insuranceName');
+    const affiliateNumberControl = insuranceGroup.get('affiliateNumber');
+
+    hasInsuranceControl?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((hasInsurance: boolean) => {
+        if (hasInsurance) {
+          insuranceNameControl?.setValidators([Validators.required]);
+          affiliateNumberControl?.setValidators([Validators.required]);
+        } else {
+          insuranceNameControl?.clearValidators();
+          affiliateNumberControl?.clearValidators();
+          insuranceNameControl?.setValue('');
+          affiliateNumberControl?.setValue('');
+        }
+        insuranceNameControl?.updateValueAndValidity();
+        affiliateNumberControl?.updateValueAndValidity();
+      });
+  }
+
+  private setupAgeCalculation(): void {
+    const personalDataGroup = this.patientForm.get('personalData') as FormGroup;
+    const birthDateControl = personalDataGroup.get('birthDate');
+    const ageControl = personalDataGroup.get('age');
+
+    birthDateControl?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((birthDate: string) => {
+        if (birthDate) {
+          const age = this.calculateAge(new Date(birthDate));
+          ageControl?.setValue(age);
+        } else {
+          ageControl?.setValue(0);
+        }
+      });
+  }
+
+  private calculateAge(birthDate: Date): number {
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return Math.max(0, age);
+  }
+
+  get hasInsurance(): boolean {
+    return this.patientForm.get('insuranceInfo.hasInsurance')?.value ?? false;
+  }
+
+  get personalData(): FormGroup {
+    return this.patientForm.get('personalData') as FormGroup;
+  }
+
+  get insuranceInfo(): FormGroup {
+    return this.patientForm.get('insuranceInfo') as FormGroup;
+  }
+
+  get dentalRecord(): FormGroup {
+    return this.patientForm.get('dentalRecord') as FormGroup;
+  }
+
+  isFieldInvalid(groupName: string, fieldName: string): boolean {
+    const control = this.patientForm.get(`${groupName}.${fieldName}`);
+    return control ? control.invalid && (control.dirty || control.touched) : false;
+  }
+
+  onSave(): void {
+    if (this.patientForm.valid) {
+      const formValue = this.patientForm.getRawValue();
+      console.log('Patient Form Value:', formValue);
+      alert('Patient saved! Check console for details.');
+    } else {
+      this.markAllAsTouched();
+      console.log('Form is invalid', this.patientForm.errors);
+    }
+  }
+
+  private markAllAsTouched(): void {
+    Object.keys(this.patientForm.controls).forEach(groupKey => {
+      const group = this.patientForm.get(groupKey) as FormGroup;
+      Object.keys(group.controls).forEach(key => {
+        group.get(key)?.markAsTouched();
+      });
+    });
+  }
+}

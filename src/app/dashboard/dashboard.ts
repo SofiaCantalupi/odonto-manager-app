@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { LucideAngularModule, Calendar, Users, FileText, Settings, Plus } from 'lucide-angular';
 
 interface User {
@@ -30,6 +31,8 @@ export class DashboardComponent {
   readonly Settings = Settings;
   readonly Plus = Plus;
 
+  constructor(private router: Router) {}
+
   // Mock current user
   currentUser: User = {
     name: 'Dr. Sarah Johnson',
@@ -52,7 +55,6 @@ export class DashboardComponent {
   }
 
   onCreateNewPatient(): void {
-    console.log('Creating new patient...');
-    // Add your logic here
+    this.router.navigate(['/patients/new']);
   }
 }
