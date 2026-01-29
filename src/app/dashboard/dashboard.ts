@@ -52,6 +52,7 @@ export class DashboardComponent {
   onMenuItemClick(item: MenuItem): void {
     this.menuItems.forEach(menuItem => menuItem.active = false);
     item.active = true;
+    this.router.navigate([item.route]);
   }
 
   onCreateNewPatient(): void {

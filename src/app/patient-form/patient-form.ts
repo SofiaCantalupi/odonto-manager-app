@@ -23,6 +23,7 @@ export function noFutureDateValidator(): ValidatorFn {
 
 // Interfaces for strict typing
 interface PersonalData {
+  idCard: string;
   firstName: string;
   lastName: string;
   birthDate: string;
@@ -53,6 +54,7 @@ export interface Patient {
 // Form type for strict typing
 interface PatientFormType {
   personalData: FormGroup<{
+    idCard: import('@angular/forms').FormControl<string>;
     firstName: import('@angular/forms').FormControl<string>;
     lastName: import('@angular/forms').FormControl<string>;
     birthDate: import('@angular/forms').FormControl<string>;
@@ -99,6 +101,7 @@ export class PatientFormComponent implements OnInit, OnDestroy {
   private initForm(): void {
     this.patientForm = this.fb.group({
       personalData: this.fb.group({
+        idCard: this.fb.nonNullable.control('', [Validators.required, Validators.minLength(6)]),
         firstName: this.fb.nonNullable.control('', [Validators.required, Validators.minLength(2)]),
         lastName: this.fb.nonNullable.control('', [Validators.required, Validators.minLength(2)]),
         birthDate: this.fb.nonNullable.control('', [Validators.required, noFutureDateValidator()]),

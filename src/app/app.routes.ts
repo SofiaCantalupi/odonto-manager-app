@@ -11,7 +11,15 @@ export const routes: Routes = [
     loadComponent: () => import('./dashboard/dashboard').then(m => m.DashboardComponent)
   },
   {
+    path: 'patients',
+    loadComponent: () => import('./patient-list/patient-list').then(m => m.PatientListComponent)
+  },
+  {
     path: 'patients/new',
+    loadComponent: () => import('./patient-form/patient-form').then(m => m.PatientFormComponent)
+  },
+  {
+    path: 'patients/:id',
     loadComponent: () => import('./patient-form/patient-form').then(m => m.PatientFormComponent)
   }
 ];

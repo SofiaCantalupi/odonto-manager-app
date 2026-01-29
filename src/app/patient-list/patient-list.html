@@ -1,0 +1,204 @@
+<div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Patient List</h1>
+      <p class="mt-2 text-gray-600">Search and manage patients</p>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4">Filters</h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Name Filter -->
+        <div>
+          <label for="nameFilter" class="block text-sm font-medium text-gray-700 mb-1">
+            Name (First or Last)
+          </label>
+          <input
+            type="text"
+            id="nameFilter"
+            [(ngModel)]="filters.name"
+            (ngModelChange)="applyFilters()"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            placeholder="Search by name..."
+          />
+        </div>
+
+        <!-- ID Card Filter -->
+        <div>
+          <label for="idCardFilter" class="block text-sm font-medium text-gray-700 mb-1">
+            ID Card (DNI)
+          </label>
+          <input
+            type="text"
+            id="idCardFilter"
+            [(ngModel)]="filters.idCard"
+            (ngModelChange)="applyFilters()"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            placeholder="Exact match..."
+          />
+        </div>
+
+        <!-- Affiliate Number Filter -->
+        <div>
+          <label for="affiliateFilter" class="block text-sm font-medium text-gray-700 mb-1">
+            Affiliate Number
+          </label>
+          <input
+            type="text"
+            id="affiliateFilter"
+            [(ngModel)]="filters.affiliateNumber"
+            (ngModelChange)="applyFilters()"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            placeholder="Exact match..."
+          />
+        </div>
+      </div>
+
+      <!-- Clear Filters Button -->
+      <div class="mt-4 flex justify-end">
+        <button
+          type="button"
+          (click)="clearFilters()"
+          class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+        >
+          Clear Filters
+        </button>
+      </div>
+    </div>
+
+    <!-- Results Info -->
+    <div class="mb-4 flex justify-between items-center">
+      <p class="text-sm text-gray-600">
+        Showing {{ paginatedPatients.length }} of {{ filteredPatients.length }} patients
+        @if (totalPages > 1) {
+          <span>(Page {{ currentPage }} of {{ totalPages }})</span>
+        }
+      </p>
+    </div>
+
+    <!-- Patient Table -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+      @if (filteredPatients.length === 0) {
+        <div class="p-8 text-center">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p class="mt-4 text-gray-500 font-medium">No patients found</p>
+          <p class="mt-1 text-sm text-gray-400">Try adjusting your search filters</p>
+        </div>
+      } @else {
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Full Name
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                DNI
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Insurance
+              </th>
+              <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            @for (patient of paginatedPatients; track patient.id) {
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-900">{{ getFullName(patient) }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-700">{{ patient.personalData.idCard }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  @if (patient.insuranceInfo.hasInsurance) {
+                    <span class="text-sm text-gray-700">{{ patient.insuranceInfo.insuranceName }}</span>
+                  } @else {
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                      Private
+                    </span>
+                  }
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button
+                    type="button"
+                    (click)="viewPatient(patient.id)"
+                    class="inline-flex items-center px-3 py-1.5 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                  >
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    View Patient
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages > 1) {
+      <div class="mt-6 flex justify-between items-center">
+        <button
+          type="button"
+          (click)="previousPage()"
+          [disabled]="!canGoPrevious"
+          class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium transition-colors"
+          [class.text-gray-700]="canGoPrevious"
+          [class.hover:bg-gray-50]="canGoPrevious"
+          [class.text-gray-400]="!canGoPrevious"
+          [class.cursor-not-allowed]="!canGoPrevious"
+          [class.bg-gray-100]="!canGoPrevious"
+        >
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Previous
+        </button>
+
+        <div class="flex items-center space-x-2">
+          @for (page of [].constructor(totalPages); track $index; let i = $index) {
+            <button
+              type="button"
+              (click)="currentPage = i + 1"
+              class="w-10 h-10 rounded-lg text-sm font-medium transition-colors"
+              [class.bg-blue-600]="currentPage === i + 1"
+              [class.text-white]="currentPage === i + 1"
+              [class.bg-gray-100]="currentPage !== i + 1"
+              [class.text-gray-700]="currentPage !== i + 1"
+              [class.hover:bg-gray-200]="currentPage !== i + 1"
+            >
+              {{ i + 1 }}
+            </button>
+          }
+        </div>
+
+        <button
+          type="button"
+          (click)="nextPage()"
+          [disabled]="!canGoNext"
+          class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium transition-colors"
+          [class.text-gray-700]="canGoNext"
+          [class.hover:bg-gray-50]="canGoNext"
+          [class.text-gray-400]="!canGoNext"
+          [class.cursor-not-allowed]="!canGoNext"
+          [class.bg-gray-100]="!canGoNext"
+        >
+          Next
+          <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+    }
+  </div>
+</div>
