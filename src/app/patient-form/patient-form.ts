@@ -1,7 +1,25 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, ValidatorFn, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
+import { Router } from "@angular/router";
+
+// Custom validator to prevent future dates
+export function noFutureDateValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    if (!control.value) {
+      return null; // Let required validator handle empty values
+    }
+    const inputDate = new Date(control.value);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
+    
+    if (inputDate > today) {
+      return { futureDate: true };
+    }
+    return null;
+  };
+}
 
 // Interfaces for strict typing
 interface PersonalData {
@@ -11,6 +29,7 @@ interface PersonalData {
   age: number;
   address: string;
   phone: string;
+  isOrthodontic: boolean;
 }
 
 interface InsuranceInfo {
@@ -40,6 +59,7 @@ interface PatientFormType {
     age: import('@angular/forms').FormControl<number>;
     address: import('@angular/forms').FormControl<string>;
     phone: import('@angular/forms').FormControl<string>;
+    isOrthodontic: import('@angular/forms').FormControl<boolean>;
   }>;
   insuranceInfo: FormGroup<{
     hasInsurance: import('@angular/forms').FormControl<boolean>;
@@ -63,7 +83,7 @@ export class PatientFormComponent implements OnInit, OnDestroy {
   patientForm!: FormGroup<PatientFormType>;
   private destroy$ = new Subject<void>();
 
-  constructor(private fb: FormBuilder) {}
+  constructor(private fb: FormBuilder, private router: Router) {}
 
   ngOnInit(): void {
     this.initForm();
@@ -81,10 +101,11 @@ export class PatientFormComponent implements OnInit, OnDestroy {
       personalData: this.fb.group({
         firstName: this.fb.nonNullable.control('', [Validators.required, Validators.minLength(2)]),
         lastName: this.fb.nonNullable.control('', [Validators.required, Validators.minLength(2)]),
-        birthDate: this.fb.nonNullable.control('', [Validators.required]),
+        birthDate: this.fb.nonNullable.control('', [Validators.required, noFutureDateValidator()]),
         age: this.fb.nonNullable.control({ value: 0, disabled: true }),
         address: this.fb.nonNullable.control('', [Validators.required]),
         phone: this.fb.nonNullable.control('', [Validators.required, Validators.pattern(/^\+?[\d\s-]{10,}$/)]),
+        isOrthodontic: this.fb.nonNullable.control(false, [Validators.required]),
       }),
       insuranceInfo: this.fb.group({
         hasInsurance: this.fb.nonNullable.control(false),
@@ -172,15 +193,28 @@ export class PatientFormComponent implements OnInit, OnDestroy {
     return control ? control.invalid && (control.dirty || control.touched) : false;
   }
 
+  hasFieldError(groupName: string, fieldName: string, errorName: string): boolean {
+    const control = this.patientForm.get(`${groupName}.${fieldName}`);
+    return control ? control.hasError(errorName) && (control.dirty || control.touched) : false;
+  }
+
   onSave(): void {
     if (this.patientForm.valid) {
       const formValue = this.patientForm.getRawValue();
       console.log('Patient Form Value:', formValue);
       alert('Patient saved! Check console for details.');
+      this.resetForm();
     } else {
       this.markAllAsTouched();
       console.log('Form is invalid', this.patientForm.errors);
     }
+  }
+
+  private resetForm(): void {
+    this.patientForm.reset();
+    // Reset nested form groups to ensure all validation states are cleared
+    this.patientForm.markAsPristine();
+    this.patientForm.markAsUntouched();
   }
 
   private markAllAsTouched(): void {
@@ -190,5 +224,9 @@ export class PatientFormComponent implements OnInit, OnDestroy {
         group.get(key)?.markAsTouched();
       });
     });
+  }
+
+  onCancel(): void {
+    this.router.navigate(['/dashboard']);
   }
 }

@@ -118,6 +118,25 @@
               <p class="mt-1 text-sm text-red-500">Valid phone number is required (min 10 digits)</p>
             }
           </div>
+
+          <!-- Orthodontic Patient -->
+          <div class="md:col-span-2">
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                id="isOrthodontic"
+                formControlName="isOrthodontic"
+                class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                [class.border-red-500]="isFieldInvalid('personalData', 'isOrthodontic')"
+              />
+              <label for="isOrthodontic" class="ml-3 text-sm font-medium text-gray-700 cursor-pointer">
+                Orthodontic Patient <span class="text-red-500">*</span>
+              </label>
+            </div>
+            @if (isFieldInvalid('personalData', 'isOrthodontic')) {
+              <p class="mt-1 text-sm text-red-500">Please indicate if this is an orthodontic patient</p>
+            }
+          </div>
         </div>
       </div>
 
@@ -257,6 +276,7 @@
         <button
           type="button"
           class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+          (click)="onCancel(); $event.preventDefault()"
         >
           Cancel
         </button>
