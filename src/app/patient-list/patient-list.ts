@@ -219,4 +219,9 @@ export class PatientListComponent implements OnInit {
   viewPatient(patientId: string): void {
     this.router.navigate(['/patients', patientId]);
   }
+
+  // Navigate back to dashboard
+  goBack(): void {
+    this.router.navigate(['/dashboard']);
+  }
 }
