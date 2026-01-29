@@ -20,6 +20,6 @@ export const routes: Routes = [
   },
   {
     path: 'patients/:id',
-    loadComponent: () => import('./patient-form/patient-form').then(m => m.PatientFormComponent)
+    loadComponent: () => import('./patient-detail/patient-detail').then(m => m.PatientDetailComponent)
   }
 ];
