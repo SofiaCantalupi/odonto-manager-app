@@ -1,0 +1,115 @@
+/* Tooth Component Styles */
+
+/* SVG Container */
+.tooth-svg {
+  width: 50px;
+  height: 50px;
+  display: block;
+}
+
+/* Base zone styling */
+.tooth-zone {
+  stroke: #374151; /* Gray-700 */
+  stroke-width: 1.5;
+  cursor: pointer;
+  transition: fill 0.2s ease, stroke 0.2s ease, opacity 0.2s ease;
+}
+
+.tooth-zone:hover {
+  stroke: #1f2937; /* Gray-800 */
+  stroke-width: 2;
+  opacity: 0.85;
+}
+
+.tooth-zone:focus {
+  outline: none;
+  stroke: #3b82f6; /* Blue-500 */
+  stroke-width: 2.5;
+}
+
+/* Default state - healthy tooth (white fill, gray stroke) */
+.zone-default {
+  fill: #ffffff;
+  stroke: #6b7280; /* Gray-500 */
+}
+
+.zone-default:hover {
+  fill: #f9fafb; /* Gray-50 */
+}
+
+/* Caries - Red fill */
+.zone-caries {
+  fill: #ef4444; /* Red-500 */
+  stroke: #b91c1c; /* Red-700 */
+}
+
+.zone-caries:hover {
+  fill: #dc2626; /* Red-600 */
+}
+
+/* Filling - Blue fill */
+.zone-filling {
+  fill: #3b82f6; /* Blue-500 */
+  stroke: #1d4ed8; /* Blue-700 */
+}
+
+.zone-filling:hover {
+  fill: #2563eb; /* Blue-600 */
+}
+
+/* Crown - Gold/Yellow fill */
+.zone-crown {
+  fill: #f59e0b; /* Amber-500 */
+  stroke: #b45309; /* Amber-700 */
+}
+
+.zone-crown:hover {
+  fill: #d97706; /* Amber-600 */
+}
+
+/* Extraction - Dark gray/black fill */
+.zone-extraction {
+  fill: #374151; /* Gray-700 */
+  stroke: #111827; /* Gray-900 */
+}
+
+.zone-extraction:hover {
+  fill: #4b5563; /* Gray-600 */
+}
+
+/* Root Canal - Purple fill */
+.zone-root-canal {
+  fill: #8b5cf6; /* Violet-500 */
+  stroke: #6d28d9; /* Violet-700 */
+}
+
+.zone-root-canal:hover {
+  fill: #7c3aed; /* Violet-600 */
+}
+
+/* Responsive sizing utility classes */
+:host(.tooth-sm) .tooth-svg {
+  width: 35px;
+  height: 35px;
+}
+
+:host(.tooth-md) .tooth-svg {
+  width: 50px;
+  height: 50px;
+}
+
+:host(.tooth-lg) .tooth-svg {
+  width: 70px;
+  height: 70px;
+}
+
+:host(.tooth-xl) .tooth-svg {
+  width: 100px;
+  height: 100px;
+}
+
+/* Full width responsive */
+:host(.tooth-responsive) .tooth-svg {
+  width: 100%;
+  height: auto;
+}

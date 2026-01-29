@@ -1,0 +1,72 @@
+<svg
+  class="tooth-svg"
+  viewBox="0 0 100 100"
+  xmlns="http://www.w3.org/2000/svg"
+  [attr.aria-label]="'Tooth ' + toothNumber"
+  role="img"
+>
+  <!-- Tooth number label (hidden but accessible) -->
+  <title>Tooth {{ toothNumber }}</title>
+
+  <!-- Top Zone (Vestibular) -->
+  <polygon
+    [attr.points]="zones.top"
+    [class]="getZoneClass('top')"
+    class="tooth-zone"
+    (click)="onZoneClick('top')"
+    role="button"
+    [attr.aria-label]="getTooltip('top')"
+  >
+    <title>{{ getTooltip('top') }}</title>
+  </polygon>
+
+  <!-- Bottom Zone (Lingual/Palatal) -->
+  <polygon
+    [attr.points]="zones.bottom"
+    [class]="getZoneClass('bottom')"
+    class="tooth-zone"
+    (click)="onZoneClick('bottom')"
+    role="button"
+    [attr.aria-label]="getTooltip('bottom')"
+  >
+    <title>{{ getTooltip('bottom') }}</title>
+  </polygon>
+
+  <!-- Left Zone (Mesial) -->
+  <polygon
+    [attr.points]="zones.left"
+    [class]="getZoneClass('left')"
+    class="tooth-zone"
+    (click)="onZoneClick('left')"
+    role="button"
+    [attr.aria-label]="getTooltip('left')"
+  >
+    <title>{{ getTooltip('left') }}</title>
+  </polygon>
+
+  <!-- Right Zone (Distal) -->
+  <polygon
+    [attr.points]="zones.right"
+    [class]="getZoneClass('right')"
+    class="tooth-zone"
+    (click)="onZoneClick('right')"
+    role="button"
+    [attr.aria-label]="getTooltip('right')"
+  >
+    <title>{{ getTooltip('right') }}</title>
+  </polygon>
+
+  <!-- Center Zone (Occlusal) - Drawn last to be on top -->
+  <polygon
+    [attr.points]="zones.center"
+    [class]="getZoneClass('center')"
+    class="tooth-zone"
+    (click)="onZoneClick('center')"
+    role="button"
+    [attr.aria-label]="getTooltip('center')"
+  >
+    <title>{{ getTooltip('center') }}</title>
+  </polygon>
+</svg>
+
+
