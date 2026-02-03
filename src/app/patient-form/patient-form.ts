@@ -3,6 +3,9 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, ValidatorFn, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 import { Router } from "@angular/router";
+import { OdontogramComponent } from '../odontogram/odontogram';
+import { OdontogramState } from '../odontogram/dental-types';
+import { ToothZoneClickEvent } from '../tooth/tooth';
 
 // Custom validator to prevent future dates
 export function noFutureDateValidator(): ValidatorFn {
@@ -77,13 +80,16 @@ interface PatientFormType {
 
 @Component({
   selector: 'app-patient-form',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, OdontogramComponent],
   templateUrl: './patient-form.html',
   styleUrl: './patient-form.css',
 })
 export class PatientFormComponent implements OnInit, OnDestroy {
   patientForm!: FormGroup<PatientFormType>;
   private destroy$ = new Subject<void>();
+
+  // Odontogram state (not part of reactive form, managed separately)
+  odontogramData: OdontogramState = {};
 
   constructor(private fb: FormBuilder, private router: Router) {}
 
@@ -231,5 +237,47 @@ export class PatientFormComponent implements OnInit, OnDestroy {
 
   onCancel(): void {
     this.router.navigate(['/dashboard']);
+  }
+
+  /**
+   * Handle tooth zone click from odontogram
+   * This can be expanded to open a modal for selecting treatment type
+   */
+  onToothClick(event: ToothZoneClickEvent): void {
+    console.log('Tooth clicked:', event);
+    // For now, toggle between healthy and caries as a demo
+    const { toothNumber, zone } = event;
+    
+    // Initialize tooth data if not exists
+    if (!this.odontogramData[toothNumber]) {
+      this.odontogramData[toothNumber] = [];
+    }
+
+    // Map zone to surface
+    const surfaceMap: Record<string, 'vestibular' | 'lingual' | 'distal' | 'mesial' | 'occlusal'> = {
+      'top': 'vestibular',
+      'bottom': 'lingual',
+      'left': 'mesial',
+      'right': 'distal',
+      'center': 'occlusal'
+    };
+    const surface = surfaceMap[zone];
+
+    // Check if there's already a treatment on this surface
+    const existingIndex = this.odontogramData[toothNumber].findIndex(t => t.surface === surface);
+    
+    if (existingIndex >= 0) {
+      // Remove existing treatment (toggle off)
+      this.odontogramData[toothNumber].splice(existingIndex, 1);
+    } else {
+      // Add caries treatment (demo - in real app, show a selection modal)
+      this.odontogramData[toothNumber].push({
+        type: 'caries',
+        surface: surface
+      });
+    }
+
+    // Trigger change detection by creating new object reference
+    this.odontogramData = { ...this.odontogramData };
   }
 }

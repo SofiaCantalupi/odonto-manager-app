@@ -1,0 +1,80 @@
+/* Odontogram Component Styles */
+
+.odontogram-container {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.dental-chart {
+  min-width: fit-content;
+}
+
+.arch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tooth-wrapper {
+  transition: transform 0.2s ease;
+}
+
+.tooth-wrapper:hover {
+  transform: scale(1.1);
+  z-index: 10;
+}
+
+.tooth-number {
+  min-width: 20px;
+  text-align: center;
+}
+
+.midline-separator {
+  flex-shrink: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .odontogram-container {
+    padding: 1rem;
+  }
+
+  .tooth-wrapper {
+    transform: scale(0.85);
+  }
+
+  .tooth-wrapper:hover {
+    transform: scale(0.95);
+  }
+
+  .tooth-number {
+    font-size: 0.65rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .tooth-wrapper {
+    transform: scale(0.7);
+  }
+
+  .tooth-wrapper:hover {
+    transform: scale(0.8);
+  }
+
+  .legend {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* Print styles */
+@media print {
+  .odontogram-container {
+    box-shadow: none;
+    border: 1px solid #e5e7eb;
+  }
+
+  .tooth-wrapper:hover {
+    transform: none;
+  }
+}
