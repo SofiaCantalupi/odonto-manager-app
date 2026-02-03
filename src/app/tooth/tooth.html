@@ -1,72 +1,113 @@
-<svg
-  class="tooth-svg"
-  viewBox="0 0 100 100"
-  xmlns="http://www.w3.org/2000/svg"
-  [attr.aria-label]="'Tooth ' + toothNumber"
-  role="img"
->
-  <!-- Tooth number label (hidden but accessible) -->
-  <title>Tooth {{ toothNumber }}</title>
-
-  <!-- Top Zone (Vestibular) -->
-  <polygon
-    [attr.points]="zones.top"
-    [class]="getZoneClass('top')"
-    class="tooth-zone"
-    (click)="onZoneClick('top')"
-    role="button"
-    [attr.aria-label]="getTooltip('top')"
+<div class="tooth-container relative">
+  <svg
+    class="tooth-svg"
+    viewBox="0 0 100 100"
+    xmlns="http://www.w3.org/2000/svg"
+    [attr.aria-label]="'Tooth ' + toothNumber"
+    role="img"
   >
-    <title>{{ getTooltip('top') }}</title>
-  </polygon>
+    <!-- Tooth number label (hidden but accessible) -->
+    <title>Tooth {{ toothNumber }}</title>
 
-  <!-- Bottom Zone (Lingual/Palatal) -->
-  <polygon
-    [attr.points]="zones.bottom"
-    [class]="getZoneClass('bottom')"
-    class="tooth-zone"
-    (click)="onZoneClick('bottom')"
-    role="button"
-    [attr.aria-label]="getTooltip('bottom')"
-  >
-    <title>{{ getTooltip('bottom') }}</title>
-  </polygon>
+    <!-- Top Zone (Vestibular) -->
+    <polygon
+      [attr.points]="zones.top"
+      [class]="getZoneClass('top')"
+      class="tooth-zone"
+      (click)="onZoneClick('top')"
+      role="button"
+      [attr.aria-label]="getTooltip('top')"
+    >
+      <title>{{ getTooltip('top') }}</title>
+    </polygon>
 
-  <!-- Left Zone (Mesial) -->
-  <polygon
-    [attr.points]="zones.left"
-    [class]="getZoneClass('left')"
-    class="tooth-zone"
-    (click)="onZoneClick('left')"
-    role="button"
-    [attr.aria-label]="getTooltip('left')"
-  >
-    <title>{{ getTooltip('left') }}</title>
-  </polygon>
+    <!-- Bottom Zone (Lingual/Palatal) -->
+    <polygon
+      [attr.points]="zones.bottom"
+      [class]="getZoneClass('bottom')"
+      class="tooth-zone"
+      (click)="onZoneClick('bottom')"
+      role="button"
+      [attr.aria-label]="getTooltip('bottom')"
+    >
+      <title>{{ getTooltip('bottom') }}</title>
+    </polygon>
 
-  <!-- Right Zone (Distal) -->
-  <polygon
-    [attr.points]="zones.right"
-    [class]="getZoneClass('right')"
-    class="tooth-zone"
-    (click)="onZoneClick('right')"
-    role="button"
-    [attr.aria-label]="getTooltip('right')"
-  >
-    <title>{{ getTooltip('right') }}</title>
-  </polygon>
+    <!-- Left Zone (Mesial) -->
+    <polygon
+      [attr.points]="zones.left"
+      [class]="getZoneClass('left')"
+      class="tooth-zone"
+      (click)="onZoneClick('left')"
+      role="button"
+      [attr.aria-label]="getTooltip('left')"
+    >
+      <title>{{ getTooltip('left') }}</title>
+    </polygon>
 
-  <!-- Center Zone (Occlusal) - Drawn last to be on top -->
-  <polygon
-    [attr.points]="zones.center"
-    [class]="getZoneClass('center')"
-    class="tooth-zone"
-    (click)="onZoneClick('center')"
-    role="button"
-    [attr.aria-label]="getTooltip('center')"
-  >
-    <title>{{ getTooltip('center') }}</title>
-  </polygon>
-</svg>
+    <!-- Right Zone (Distal) -->
+    <polygon
+      [attr.points]="zones.right"
+      [class]="getZoneClass('right')"
+      class="tooth-zone"
+      (click)="onZoneClick('right')"
+      role="button"
+      [attr.aria-label]="getTooltip('right')"
+    >
+      <title>{{ getTooltip('right') }}</title>
+    </polygon>
+
+    <!-- Center Zone (Occlusal) - Drawn last to be on top -->
+    <polygon
+      [attr.points]="zones.center"
+      [class]="getZoneClass('center')"
+      class="tooth-zone"
+      (click)="onZoneClick('center')"
+      role="button"
+      [attr.aria-label]="getTooltip('center')"
+    >
+      <title>{{ getTooltip('center') }}</title>
+    </polygon>
+
+    <!-- ========== OVERLAYS FOR WHOLE-TOOTH TREATMENTS ========== -->
+
+    <!-- Cross Overlay (X) for Extraction (Blue) or Missing (Red) -->
+    @if (hasCrossOverlay) {
+      <g class="cross-overlay" pointer-events="none">
+        <line 
+          x1="5" y1="5" x2="95" y2="95" 
+          [attr.stroke]="crossColor" 
+          stroke-width="4" 
+          stroke-linecap="round"
+        />
+        <line 
+          x1="95" y1="5" x2="5" y2="95" 
+          [attr.stroke]="crossColor" 
+          stroke-width="4" 
+          stroke-linecap="round"
+        />
+      </g>
+    }
+
+    <!-- Circle Overlay for Crown (Black outline, transparent fill) -->
+    @if (hasCircleOverlay) {
+      <circle 
+        class="circle-overlay"
+        cx="50" cy="50" r="45" 
+        fill="transparent" 
+        stroke="#000000" 
+        stroke-width="3"
+        pointer-events="none"
+      />
+    }
+  </svg>
+
+  <!-- Text Label Badge for Root Canal (TC) or Implant (IM) -->
+  @if (hasTextOverlay) {
+    <div class="text-label-badge">
+      {{ textLabel }}
+    </div>
+  }
+</div>
 
 

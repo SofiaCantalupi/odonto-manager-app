@@ -76,34 +76,61 @@
     </div>
   </div>
 
-  <!-- Legend -->
+  <!-- Legend / Reference -->
   <div class="legend mt-8 pt-4 border-t border-gray-200">
-    <h4 class="text-sm font-medium text-gray-700 mb-3">Legend</h4>
+    <h4 class="text-sm font-medium text-gray-700 mb-3">Reference</h4>
     <div class="flex flex-wrap justify-center gap-4">
+      
+      <!-- Extraction - Blue X -->
       <div class="legend-item flex items-center gap-2">
-        <span class="w-4 h-4 rounded border border-gray-400 bg-white"></span>
-        <span class="text-xs text-gray-600">Healthy</span>
+        <svg class="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round">
+          <line x1="3" y1="3" x2="13" y2="13"></line>
+          <line x1="13" y1="3" x2="3" y2="13"></line>
+        </svg>
+        <span class="text-sm text-gray-600">Extraction</span>
       </div>
+      
+      <!-- Missing - Red X -->
       <div class="legend-item flex items-center gap-2">
-        <span class="w-4 h-4 rounded bg-red-500"></span>
-        <span class="text-xs text-gray-600">Caries</span>
+        <svg class="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round">
+          <line x1="3" y1="3" x2="13" y2="13"></line>
+          <line x1="13" y1="3" x2="3" y2="13"></line>
+        </svg>
+        <span class="text-sm text-gray-600">Missing</span>
       </div>
+      
+      <!-- Caries - Red Square -->
       <div class="legend-item flex items-center gap-2">
-        <span class="w-4 h-4 rounded bg-blue-500"></span>
-        <span class="text-xs text-gray-600">Filling</span>
+        <span class="w-4 h-4 rounded-sm bg-red-500"></span>
+        <span class="text-sm text-gray-600">Caries</span>
       </div>
+      
+      <!-- Filling - Blue Square -->
       <div class="legend-item flex items-center gap-2">
-        <span class="w-4 h-4 rounded bg-amber-500"></span>
-        <span class="text-xs text-gray-600">Crown</span>
+        <span class="w-4 h-4 rounded-sm bg-blue-500"></span>
+        <span class="text-sm text-gray-600">Filling</span>
       </div>
+      
+      <!-- Crown - Black Circle Outline -->
       <div class="legend-item flex items-center gap-2">
-        <span class="w-4 h-4 rounded bg-violet-500"></span>
-        <span class="text-xs text-gray-600">Root Canal</span>
+        <svg class="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="#000000" stroke-width="2">
+          <circle cx="8" cy="8" r="6"></circle>
+        </svg>
+        <span class="text-sm text-gray-600">Crown</span>
       </div>
+      
+      <!-- Root Canal - TC Text -->
       <div class="legend-item flex items-center gap-2">
-        <span class="w-4 h-4 rounded bg-gray-700"></span>
-        <span class="text-xs text-gray-600">Extraction/Missing</span>
+        <span class="inline-flex items-center justify-center w-5 h-4 bg-black text-white text-[10px] font-bold rounded-sm">TC</span>
+        <span class="text-sm text-gray-600">Root Canal</span>
       </div>
+      
+      <!-- Implant - IM Text -->
+      <div class="legend-item flex items-center gap-2">
+        <span class="inline-flex items-center justify-center w-5 h-4 bg-black text-white text-[10px] font-bold rounded-sm">IM</span>
+        <span class="text-sm text-gray-600">Implant</span>
+      </div>
+      
     </div>
   </div>
 </div>

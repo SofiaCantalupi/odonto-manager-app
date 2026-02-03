@@ -1,5 +1,13 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { 
+  TreatmentType, 
+  TREATMENT_CONFIG, 
+  TreatmentSymbol,
+  isWholeToothTreatment,
+  getTreatmentSymbol,
+  getTreatmentColor
+} from '../odontogram/dental-types';
 
 // Zone identifier type
 export type ToothZone = 'center' | 'top' | 'bottom' | 'left' | 'right';
@@ -14,6 +22,8 @@ export interface ToothSurfaceData {
   bottom?: ToothCondition;
   left?: ToothCondition;
   right?: ToothCondition;
+  // Whole tooth treatment (optional)
+  wholeToothTreatment?: TreatmentType;
 }
 
 // Event emitted when a zone is clicked
@@ -86,6 +96,64 @@ export class ToothComponent {
     left: 'Mesial',
     right: 'Distal'
   };
+
+  /**
+   * Check if the tooth has a whole-tooth treatment
+   */
+  get hasWholeToothTreatment(): boolean {
+    return !!this.data.wholeToothTreatment && isWholeToothTreatment(this.data.wholeToothTreatment);
+  }
+
+  /**
+   * Get the whole-tooth treatment type
+   */
+  get wholeToothTreatment(): TreatmentType | undefined {
+    return this.data.wholeToothTreatment;
+  }
+
+  /**
+   * Check if tooth has a cross overlay (extraction or missing)
+   */
+  get hasCrossOverlay(): boolean {
+    const treatment = this.data.wholeToothTreatment;
+    if (!treatment) return false;
+    return treatment === 'extraction' || treatment === 'missing';
+  }
+
+  /**
+   * Check if tooth has a circle overlay (crown)
+   */
+  get hasCircleOverlay(): boolean {
+    return this.data.wholeToothTreatment === 'crown';
+  }
+
+  /**
+   * Check if tooth has a text label overlay (root-canal or implant)
+   */
+  get hasTextOverlay(): boolean {
+    const treatment = this.data.wholeToothTreatment;
+    if (!treatment) return false;
+    return treatment === 'root-canal' || treatment === 'implant';
+  }
+
+  /**
+   * Get the text label for text overlay treatments
+   */
+  get textLabel(): string {
+    const treatment = this.data.wholeToothTreatment;
+    if (treatment === 'root-canal') return 'TC';
+    if (treatment === 'implant') return 'IM';
+    return '';
+  }
+
+  /**
+   * Get the color for the cross overlay
+   */
+  get crossColor(): string {
+    const treatment = this.data.wholeToothTreatment;
+    if (!treatment) return '#000000';
+    return getTreatmentColor(treatment);
+  }
 
   /**
    * Get the CSS class for a specific zone based on its condition

@@ -87,10 +87,49 @@
   fill: #7c3aed; /* Violet-600 */
 }
 
+/* ========== WHOLE-TOOTH TREATMENT OVERLAYS ========== */
+
+/* Container for tooth with overlays */
+.tooth-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* Cross overlay styling */
+.cross-overlay line {
+  transition: stroke 0.2s ease;
+}
+
+/* Circle overlay styling */
+.circle-overlay {
+  transition: stroke 0.2s ease;
+}
+
+/* Text label badge for TC/IM */
+.text-label-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background-color: #000000;
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: bold;
+  padding: 1px 3px;
+  border-radius: 2px;
+  line-height: 1;
+  z-index: 10;
+  pointer-events: none;
+}
+
 /* Responsive sizing utility classes */
 :host(.tooth-sm) .tooth-svg {
   width: 35px;
   height: 35px;
+}
+
+:host(.tooth-sm) .text-label-badge {
+  font-size: 6px;
+  padding: 1px 2px;
 }
 
 :host(.tooth-md) .tooth-svg {
@@ -103,9 +142,19 @@
   height: 70px;
 }
 
+:host(.tooth-lg) .text-label-badge {
+  font-size: 10px;
+  padding: 2px 4px;
+}
+
 :host(.tooth-xl) .tooth-svg {
   width: 100px;
   height: 100px;
+}
+
+:host(.tooth-xl) .text-label-badge {
+  font-size: 12px;
+  padding: 2px 5px;
 }
 
 /* Full width responsive */
