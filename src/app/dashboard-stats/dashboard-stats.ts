@@ -2,13 +2,13 @@ import { Component } from '@angular/core';
 import { LucideAngularModule, Calendar, Users, FileText, Settings, Plus } from 'lucide-angular';
 
 @Component({
-  selector: 'app-dashboard-statistics',
+  selector: 'app-dashboard-stats',
   standalone: true,
   imports: [LucideAngularModule],
-  templateUrl: './dashboard-statistics.html',
-  styleUrl: './dashboard-statistics.css',
+  templateUrl: './dashboard-stats.html',
+  styleUrl: './dashboard-stats.css',
 })
-export class DashboardStatistics {
+export class DashboardStatsComponent {
   Calendar = Calendar;
   Users = Users;
   FileText = FileText;
