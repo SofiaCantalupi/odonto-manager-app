@@ -1,0 +1,12 @@
+{
+    "css.lint.unknownAtRules": "ignore",
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "files.associations": {
+        "*.html": "html",
+        "*.css": "css",
+        "*.ts": "typescript"
+    },
+    "tailwindCSS.classAttributes": ["class", "className", "ngClass"],
+    "tailwindCSS.experimental.configFile": "src/styles.css"
+}
