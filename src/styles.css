@@ -1,9 +1,12 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+@import '../node_modules/ng-zorro-antd/ng-zorro-antd.min.css';
 
 @theme {
   /* Default Tailwind theme with custom overrides */
-  --font-family-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  
+  --font-family-sans:
+    ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
+
   /* Color palette - feel free to customize */
   --color-primary: #3b82f6;
   --color-primary-hover: #2563eb;
@@ -11,7 +14,7 @@
   --color-success: #10b981;
   --color-danger: #ef4444;
   --color-warning: #f59e0b;
-  
+
   /* Spacing */
   --spacing-xs: 0.5rem;
   --spacing-sm: 1rem;
