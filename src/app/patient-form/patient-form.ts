@@ -236,7 +236,7 @@ export class PatientFormComponent implements OnInit, OnDestroy {
   }
 
   onCancel(): void {
-    this.router.navigate(['/dashboard']);
+    this.router.navigate(['/home']);
   }
 
   /**

@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet } from '@angular/router';
 import { LucideAngularModule, Calendar, Users, FileText, Settings, Plus } from 'lucide-angular';
 import { NzButtonModule } from 'ng-zorro-antd/button';
+import { filter } from 'rxjs/operators';
+import { NavigationEnd } from '@angular/router';
 
 interface User {
   name: string;
@@ -20,9 +22,9 @@ interface MenuItem {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, LucideAngularModule, RouterOutlet,NzButtonModule],
+  imports: [CommonModule, LucideAngularModule, RouterOutlet, NzButtonModule],
   templateUrl: './dashboard.html',
-  styleUrl: './dashboard.css'
+  styleUrl: './dashboard.css',
 })
 export class DashboardComponent {
   // Icons
@@ -32,14 +34,22 @@ export class DashboardComponent {
   readonly Settings = Settings;
   readonly Plus = Plus;
 
-  constructor(private router: Router) {}
+  isHomePage = true;
+
+  constructor(private router: Router) {
+    this.router.events
+      .pipe(filter((event) => event instanceof NavigationEnd))
+      .subscribe((event: NavigationEnd) => {
+        this.isHomePage = event.url === '/' || event.url === '/home';
+      });
+  }
 
   // Mock current user
   currentUser: User = {
     name: 'Dr. Sarah Johnson',
     email: 'sarah.johnson@dental.com',
     avatar: 'https://ui-avatars.com/api/?name=Sarah+Johnson&background=0D8ABC&color=fff',
-    role: 'Dentist'
+    role: 'Dentist',
   };
 
   // Navigation menu items
@@ -47,11 +57,11 @@ export class DashboardComponent {
     { label: 'Agenda', icon: Calendar, route: '/agenda', active: true },
     { label: 'Patients', icon: Users, route: '/patients', active: false },
     { label: 'Estimates', icon: FileText, route: '/estimates', active: false },
-    { label: 'Settings', icon: Settings, route: '/settings', active: false }
+    { label: 'Settings', icon: Settings, route: '/settings', active: false },
   ];
 
   onMenuItemClick(item: MenuItem): void {
-    this.menuItems.forEach(menuItem => menuItem.active = false);
+    this.menuItems.forEach((menuItem) => (menuItem.active = false));
     item.active = true;
     this.router.navigate([item.route]);
   }

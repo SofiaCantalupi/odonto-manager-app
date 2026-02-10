@@ -45,21 +45,23 @@
   <!-- Main Content Area -->
   <main class="flex-1 overflow-auto">
     <!-- Header -->
-    <header class="bg-white shadow-sm border-b border-gray-200">
-      <div class="px-8 py-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-3xl font-bold text-gray-900">Dashboard</h2>
-            <p class="text-gray-600 mt-1">Welcome back, {{ currentUser.name.split(' ')[1] }}!</p>
-          </div>
+    @if (isHomePage) {
+      <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="px-8 py-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-3xl font-bold text-gray-900">Dashboard</h2>
+              <p class="text-gray-600 mt-1">Welcome back, {{ currentUser.name.split(' ')[1] }}!</p>
+            </div>
 
-          <!-- Create New Patient Button -->
-          <button (click)="onCreateNewPatient()" nz-button nzType="primary">
-            Create New Patient
-          </button>
+            <!-- Create New Patient Button -->
+            <button (click)="onCreateNewPatient()" nz-button nzType="primary">
+              Create New Patient
+            </button>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+    }
 
     <!-- Dashboard Content -->
     <div class="p-8">
