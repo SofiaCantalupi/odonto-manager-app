@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet } from '@angular/router';
 import { LucideAngularModule, Calendar, Users, FileText, Settings, Plus } from 'lucide-angular';
+import { NzButtonModule } from 'ng-zorro-antd/button';
 
 interface User {
   name: string;
@@ -19,7 +20,7 @@ interface MenuItem {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, LucideAngularModule, RouterOutlet],
+  imports: [CommonModule, LucideAngularModule, RouterOutlet,NzButtonModule],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
