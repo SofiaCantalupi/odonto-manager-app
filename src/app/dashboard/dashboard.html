@@ -1,10 +1,11 @@
-<div class="flex h-screen bg-gray-50">
+<div class="bg-gray-50 grid grid-cols-[256px_1fr]">
+  
   <!-- Sidebar -->
-  <aside class="w-64 bg-white shadow-lg flex flex-col">
+  <nz-sider nzWidth="256px" nzTheme="light" class="shadow-lg">
     <!-- Logo/Brand -->
     <div class="p-6 border-b border-gray-200">
       <h1 class="text-2xl font-bold text-blue-600">DentalManager</h1>
-      <p class="text-xs text-gray-500 mt-1">Practice Management ass</p>
+      <p class="text-xs text-gray-500 mt-1">Practice Management</p>
     </div>
 
     <!-- Navigation Menu -->
@@ -40,32 +41,35 @@
         </div>
       </div>
     </div>
-  </aside>
+  </nz-sider>
 
-  <!-- Main Content Area -->
-  <main class="flex-1 overflow-auto">
+  <!-- Layout interno: Header + Content (columna derecha) -->
+  <div class="flex flex-col">
+    
     <!-- Header -->
     @if (isHomePage) {
-      <header class="bg-white shadow-sm border-b border-gray-200">
-        <div class="px-8 py-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <h2 class="text-3xl font-bold text-gray-900">Dashboard</h2>
-              <p class="text-gray-600 mt-1">Welcome back, {{ currentUser.name.split(' ')[1] }}!</p>
-            </div>
-
-            <!-- Create New Patient Button -->
-            <button (click)="onCreateNewPatient()" nz-button nzType="primary">
-              Create New Patient
-            </button>
+      <div class="bg-white shadow-sm border-b border-gray-200 px-8 py-6 shrink-0">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-3xl font-bold text-gray-900">Dashboard</h2>
+            <p class="text-gray-600 mt-1">
+              Welcome back, {{ currentUser.name.split(' ')[1] }}!
+            </p>
           </div>
+          <button (click)="onCreateNewPatient()" nz-button nzType="primary">
+            Create New Patient
+          </button>
         </div>
-      </header>
+      </div>
     }
 
-    <!-- Dashboard Content -->
-    <div class="p-8">
-      <router-outlet></router-outlet>
+    <!-- Content -->
+    <div class="flex-1 overflow-auto bg-gray-50 p-8">
+      <div class="p-8">
+        <router-outlet></router-outlet>
+      </div>
     </div>
-  </main>
+
+  </div>
+
 </div>
