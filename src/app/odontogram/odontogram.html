@@ -7,7 +7,6 @@
 
   <!-- Dental Chart -->
   <div class="dental-chart flex flex-col items-center gap-4">
-    
     <!-- Upper Arch -->
     <div class="arch upper-arch">
       <!-- Quadrant Labels -->
@@ -15,11 +14,19 @@
         <span class="text-xs font-medium text-gray-500">Upper Right (Q1)</span>
         <span class="text-xs font-medium text-gray-500">Upper Left (Q2)</span>
       </div>
-      
+
       <!-- Teeth Row -->
       <div class="flex justify-center items-end gap-1">
         @for (toothId of upperArch; track toothId) {
-          <div class="tooth-wrapper flex flex-col items-center">
+          <div
+            class="tooth-wrapper flex flex-col items-center cursor-pointer transition-all rounded-md p-2"
+            [ngClass]="
+              isToothSelected(toothId)
+                ? 'bg-blue-100 border-2 border-blue-500 shadow-md'
+                : 'hover:bg-gray-100'
+            "
+            (click)="selectTooth(toothId)"
+          >
             <!-- Tooth Number -->
             <span class="tooth-number text-xs font-medium text-gray-600 mb-1">
               {{ toothId }}
@@ -29,9 +36,10 @@
               [toothNumber]="toothId"
               [data]="getToothData(toothId)"
               (zoneClick)="onToothZoneClick($event)"
+              (click)="$event.stopPropagation()"
             ></app-tooth>
           </div>
-          
+
           <!-- Midline Separator (between 11 and 21) -->
           @if (toothId === 11) {
             <div class="midline-separator w-px h-16 bg-gray-300 mx-2"></div>
@@ -41,33 +49,44 @@
     </div>
 
     <!-- Arch Separator -->
-    <div class="arch-separator w-full max-w-2xl border-t-2 border-dashed border-gray-300 my-2"></div>
+    <div
+      class="arch-separator w-full max-w-2xl border-t-2 border-dashed border-gray-300 my-2"
+    ></div>
 
     <!-- Lower Arch -->
     <div class="arch lower-arch">
       <!-- Teeth Row -->
       <div class="flex justify-center items-start gap-1">
         @for (toothId of lowerArch; track toothId) {
-          <div class="tooth-wrapper flex flex-col items-center">
+          <div
+            class="tooth-wrapper flex flex-col items-center cursor-pointer transition-all rounded-md p-2"
+            [ngClass]="
+              isToothSelected(toothId)
+                ? 'bg-blue-100 border-2 border-blue-500 shadow-md'
+                : 'hover:bg-gray-100'
+            "
+            (click)="selectTooth(toothId)"
+          >
             <!-- Tooth Component -->
             <app-tooth
               [toothNumber]="toothId"
               [data]="getToothData(toothId)"
               (zoneClick)="onToothZoneClick($event)"
+              (click)="$event.stopPropagation()"
             ></app-tooth>
             <!-- Tooth Number -->
             <span class="tooth-number text-xs font-medium text-gray-600 mt-1">
               {{ toothId }}
             </span>
           </div>
-          
+
           <!-- Midline Separator (between 41 and 31) -->
           @if (toothId === 41) {
             <div class="midline-separator w-px h-16 bg-gray-300 mx-2"></div>
           }
         }
       </div>
-      
+
       <!-- Quadrant Labels -->
       <div class="flex justify-between w-full mt-2 px-2">
         <span class="text-xs font-medium text-gray-500">Lower Right (Q4)</span>
@@ -76,41 +95,71 @@
     </div>
   </div>
 
+  <!-- Selection Control Panel -->
+  @if (selectedCount() > 0) {
+    <div
+      class="selection-control-panel mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200 flex justify-between items-center"
+    >
+      <span class="text-sm font-medium text-blue-800">
+        {{ getSelectionCounterText() }}
+      </span>
+      <button
+        (click)="clearSelection()"
+        class="px-4 py-2 bg-gray-400 hover:bg-gray-500 text-white text-sm font-medium rounded-md transition-colors"
+      >
+        Clear Selection
+      </button>
+    </div>
+  }
+
   <!-- Legend / Reference -->
   <div class="legend mt-8 pt-4 border-t border-gray-200">
     <h4 class="text-sm font-medium text-gray-700 mb-3">Reference</h4>
     <div class="flex flex-wrap justify-center gap-4">
-      
       <!-- Extraction - Blue X -->
       <div class="legend-item flex items-center gap-2">
-        <svg class="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round">
+        <svg
+          class="w-4 h-4"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="#3b82f6"
+          stroke-width="2.5"
+          stroke-linecap="round"
+        >
           <line x1="3" y1="3" x2="13" y2="13"></line>
           <line x1="13" y1="3" x2="3" y2="13"></line>
         </svg>
         <span class="text-sm text-gray-600">Extraction</span>
       </div>
-      
+
       <!-- Missing - Red X -->
       <div class="legend-item flex items-center gap-2">
-        <svg class="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round">
+        <svg
+          class="w-4 h-4"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="#ef4444"
+          stroke-width="2.5"
+          stroke-linecap="round"
+        >
           <line x1="3" y1="3" x2="13" y2="13"></line>
           <line x1="13" y1="3" x2="3" y2="13"></line>
         </svg>
         <span class="text-sm text-gray-600">Missing</span>
       </div>
-      
+
       <!-- Caries - Blue Square -->
       <div class="legend-item flex items-center gap-2">
         <span class="w-4 h-4 rounded-sm bg-blue-500"></span>
         <span class="text-sm text-gray-600">Caries</span>
       </div>
-      
+
       <!-- Filling - Red Square -->
       <div class="legend-item flex items-center gap-2">
         <span class="w-4 h-4 rounded-sm bg-red-500"></span>
         <span class="text-sm text-gray-600">Filling</span>
       </div>
-      
+
       <!-- Crown - Black Circle Outline -->
       <div class="legend-item flex items-center gap-2">
         <svg class="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="#000000" stroke-width="2">
@@ -118,19 +167,24 @@
         </svg>
         <span class="text-sm text-gray-600">Crown</span>
       </div>
-      
+
       <!-- Root Canal - TC Text -->
       <div class="legend-item flex items-center gap-2">
-        <span class="inline-flex items-center justify-center w-5 h-4 bg-black text-white text-[10px] font-bold rounded-sm">TC</span>
+        <span
+          class="inline-flex items-center justify-center w-5 h-4 bg-black text-white text-[10px] font-bold rounded-sm"
+          >TC</span
+        >
         <span class="text-sm text-gray-600">Root Canal</span>
       </div>
-      
+
       <!-- Implant - IM Text -->
       <div class="legend-item flex items-center gap-2">
-        <span class="inline-flex items-center justify-center w-5 h-4 bg-black text-white text-[10px] font-bold rounded-sm">IM</span>
+        <span
+          class="inline-flex items-center justify-center w-5 h-4 bg-black text-white text-[10px] font-bold rounded-sm"
+          >IM</span
+        >
         <span class="text-sm text-gray-600">Implant</span>
       </div>
-      
     </div>
   </div>
 </div>

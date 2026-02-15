@@ -5,25 +5,25 @@
 /**
  * Tooth surface identifiers (FDI standard naming)
  */
-export type ToothSurface = 
-  | 'vestibular'  // Outer surface (toward cheek/lip) - maps to 'top'
-  | 'lingual'     // Inner surface (toward tongue) - maps to 'bottom'
-  | 'distal'      // Away from midline - maps to 'right'
-  | 'mesial'      // Toward midline - maps to 'left'
-  | 'occlusal'    // Chewing surface - maps to 'center'
-  | 'center';     // Alternative name for occlusal
+export type ToothSurface =
+  | 'vestibular' // Outer surface (toward cheek/lip) - maps to 'top'
+  | 'lingual' // Inner surface (toward tongue) - maps to 'bottom'
+  | 'distal' // Away from midline - maps to 'right'
+  | 'mesial' // Toward midline - maps to 'left'
+  | 'occlusal' // Chewing surface - maps to 'center'
+  | 'center'; // Alternative name for occlusal
 
 /**
  * Types of dental treatments/conditions
  */
-export type TreatmentType = 
-  | 'extraction'  // Tooth extracted (blue cross)
-  | 'missing'     // Tooth missing (red cross)
-  | 'caries'      // Tooth decay (blue fill - surface)
-  | 'root-canal'  // Root canal treatment (label TC)
-  | 'crown'       // Crown placed (black circle outline)
-  | 'filling'     // Filling/Obturacion (red fill - surface)
-  | 'implant';    // Dental implant (label IM)
+export type TreatmentType =
+  | 'extraction' // Tooth extracted (blue cross)
+  | 'missing' // Tooth missing (red cross)
+  | 'caries' // Tooth decay (blue fill - surface)
+  | 'root-canal' // Root canal treatment (label TC)
+  | 'crown' // Crown placed (black circle outline)
+  | 'filling' // Filling/Obturacion (red fill - surface)
+  | 'implant'; // Dental implant (label IM)
 
 /**
  * Treatment scope - determines how the treatment is visually applied
@@ -64,7 +64,7 @@ export const TREATMENT_CONFIG: Record<TreatmentType, TreatmentConfig> = {
     color: '#3b82f6', // Blue-500
     bgClass: 'bg-blue-500',
     strokeClass: 'stroke-blue-500',
-    symbol: 'cross'
+    symbol: 'cross',
   },
   missing: {
     label: 'Missing',
@@ -72,7 +72,7 @@ export const TREATMENT_CONFIG: Record<TreatmentType, TreatmentConfig> = {
     color: '#ef4444', // Red-500
     bgClass: 'bg-red-500',
     strokeClass: 'stroke-red-500',
-    symbol: 'cross'
+    symbol: 'cross',
   },
   caries: {
     label: 'Caries',
@@ -80,7 +80,7 @@ export const TREATMENT_CONFIG: Record<TreatmentType, TreatmentConfig> = {
     color: '#3b82f6', // Blue-500
     bgClass: 'bg-blue-500',
     strokeClass: 'stroke-blue-500',
-    symbol: 'none'
+    symbol: 'none',
   },
   filling: {
     label: 'Filling (Obturación)',
@@ -88,7 +88,7 @@ export const TREATMENT_CONFIG: Record<TreatmentType, TreatmentConfig> = {
     color: '#ef4444', // Red-500
     bgClass: 'bg-red-500',
     strokeClass: 'stroke-red-500',
-    symbol: 'none'
+    symbol: 'none',
   },
   crown: {
     label: 'Crown',
@@ -96,7 +96,7 @@ export const TREATMENT_CONFIG: Record<TreatmentType, TreatmentConfig> = {
     color: '#000000', // Black
     bgClass: 'bg-black',
     strokeClass: 'stroke-black',
-    symbol: 'circle'
+    symbol: 'circle',
   },
   'root-canal': {
     label: 'Root Canal',
@@ -104,7 +104,7 @@ export const TREATMENT_CONFIG: Record<TreatmentType, TreatmentConfig> = {
     color: '#000000', // Black
     bgClass: 'bg-black',
     strokeClass: 'stroke-black',
-    symbol: 'text-TC'
+    symbol: 'text-TC',
   },
   implant: {
     label: 'Implant',
@@ -112,8 +112,8 @@ export const TREATMENT_CONFIG: Record<TreatmentType, TreatmentConfig> = {
     color: '#000000', // Black
     bgClass: 'bg-black',
     strokeClass: 'stroke-black',
-    symbol: 'text-IM'
-  }
+    symbol: 'text-IM',
+  },
 };
 
 /**
@@ -149,7 +149,9 @@ export interface OdontogramChangeEvent {
 /**
  * Maps ToothSurface to the ToothZone used by ToothComponent
  */
-export function surfaceToZone(surface: ToothSurface): 'center' | 'top' | 'bottom' | 'left' | 'right' {
+export function surfaceToZone(
+  surface: ToothSurface,
+): 'center' | 'top' | 'bottom' | 'left' | 'right' {
   switch (surface) {
     case 'vestibular':
       return 'top';
@@ -171,7 +173,9 @@ export function surfaceToZone(surface: ToothSurface): 'center' | 'top' | 'bottom
  * Maps TreatmentType to the ToothCondition used by ToothComponent
  * This maps treatments to their fill colors for surface-level display
  */
-export function treatmentToCondition(type: TreatmentType): 'healthy' | 'caries' | 'filling' | 'crown' | 'extraction' | 'root-canal' {
+export function treatmentToCondition(
+  type: TreatmentType,
+): 'healthy' | 'caries' | 'filling' | 'crown' | 'extraction' | 'root-canal' {
   switch (type) {
     case 'caries':
     case 'extraction':

@@ -1,13 +1,15 @@
-import { Component, input, output, computed } from '@angular/core';
+import { Component, input, output, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ToothComponent, ToothSurfaceData, ToothZoneClickEvent } from '../tooth/tooth';
-import { 
-  OdontogramState, 
-  ToothTreatment, 
+import {
+  OdontogramState,
+  ToothTreatment,
   OdontogramChangeEvent,
   surfaceToZone,
-  treatmentToCondition
+  treatmentToCondition,
 } from './dental-types';
+import { OdontogramService } from './odontogram.service';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-odontogram',
@@ -16,7 +18,10 @@ import {
   templateUrl: './odontogram.html',
   styleUrl: './odontogram.css',
 })
-export class OdontogramComponent {
+export class OdontogramComponent implements OnInit {
+  constructor(private selectionService: OdontogramService) {
+    this.selectedTeeth$ = this.selectionService.selectedTeeth$;
+  }
   /**
    * Signal Input: The current state of the odontogram
    * Uses modern Angular 18+ signal input API
@@ -37,6 +42,16 @@ export class OdontogramComponent {
    * Output: Emitted when a tooth zone is clicked
    */
   toothClick = output<ToothZoneClickEvent>();
+
+  /**
+   * Observable for selected teeth state
+   */
+  selectedTeeth$: Observable<Set<number>>;
+
+  /**
+   * Computed property for selected teeth count
+   */
+  selectedCount = computed(() => this.selectionService.getSelectedCount());
 
   /**
    * Upper arch teeth (FDI numbering: right to left from patient's perspective)
@@ -124,11 +139,54 @@ export class OdontogramComponent {
   getQuadrantLabel(toothNumber: number): string {
     const quadrant = Math.floor(toothNumber / 10);
     switch (quadrant) {
-      case 1: return 'Upper Right';
-      case 2: return 'Upper Left';
-      case 3: return 'Lower Left';
-      case 4: return 'Lower Right';
-      default: return '';
+      case 1:
+        return 'Upper Right';
+      case 2:
+        return 'Upper Left';
+      case 3:
+        return 'Lower Left';
+      case 4:
+        return 'Lower Right';
+      default:
+        return '';
     }
+  }
+
+  /**
+   * Initialize component and load persisted selections
+   */
+  ngOnInit(): void {
+    this.selectedTeeth$ = this.selectionService.selectedTeeth$;
+  }
+
+  /**
+   * Handle tooth selection toggle
+   * @param toothId - The FDI tooth number to select/deselect
+   */
+  selectTooth(toothId: number): void {
+    this.selectionService.toggleToothSelection(toothId);
+  }
+
+  /**
+   * Check if a specific tooth is selected
+   * @param toothId - The FDI tooth number to check
+   */
+  isToothSelected(toothId: number): boolean {
+    return this.selectionService.isToothSelected(toothId);
+  }
+
+  /**
+   * Clear all selected teeth
+   */
+  clearSelection(): void {
+    this.selectionService.clearSelection();
+  }
+
+  /**
+   * Get formatted selection counter text
+   */
+  getSelectionCounterText(): string {
+    const count = this.selectedCount();
+    return count === 1 ? '1 tooth selected' : `${count} teeth selected`;
   }
 }
