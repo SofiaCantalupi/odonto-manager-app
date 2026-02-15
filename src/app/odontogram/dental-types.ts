@@ -19,10 +19,10 @@ export type ToothSurface =
 export type TreatmentType = 
   | 'extraction'  // Tooth extracted (blue cross)
   | 'missing'     // Tooth missing (red cross)
-  | 'caries'      // Tooth decay (red fill - surface)
+  | 'caries'      // Tooth decay (blue fill - surface)
   | 'root-canal'  // Root canal treatment (label TC)
   | 'crown'       // Crown placed (black circle outline)
-  | 'filling'     // Filling/Obturacion (blue fill - surface)
+  | 'filling'     // Filling/Obturacion (red fill - surface)
   | 'implant';    // Dental implant (label IM)
 
 /**
@@ -77,17 +77,17 @@ export const TREATMENT_CONFIG: Record<TreatmentType, TreatmentConfig> = {
   caries: {
     label: 'Caries',
     scope: 'surface',
-    color: '#ef4444', // Red-500
-    bgClass: 'bg-red-500',
-    strokeClass: 'stroke-red-500',
+    color: '#3b82f6', // Blue-500
+    bgClass: 'bg-blue-500',
+    strokeClass: 'stroke-blue-500',
     symbol: 'none'
   },
   filling: {
     label: 'Filling (Obturación)',
     scope: 'surface',
-    color: '#3b82f6', // Blue-500
-    bgClass: 'bg-blue-500',
-    strokeClass: 'stroke-blue-500',
+    color: '#ef4444', // Red-500
+    bgClass: 'bg-red-500',
+    strokeClass: 'stroke-red-500',
     symbol: 'none'
   },
   crown: {
@@ -174,17 +174,17 @@ export function surfaceToZone(surface: ToothSurface): 'center' | 'top' | 'bottom
 export function treatmentToCondition(type: TreatmentType): 'healthy' | 'caries' | 'filling' | 'crown' | 'extraction' | 'root-canal' {
   switch (type) {
     case 'caries':
-    case 'missing':
-      return 'caries'; // Red fill
-    case 'filling':
     case 'extraction':
-      return 'filling'; // Blue fill
+      return 'caries'; // Blue fill
+    case 'filling':
+    case 'missing':
+      return 'filling'; // Red fill
     case 'crown':
       return 'crown';
     case 'root-canal':
       return 'root-canal';
     case 'implant':
-      return 'filling'; // Blue fill
+      return 'caries'; // Blue fill
     default:
       return 'healthy';
   }
