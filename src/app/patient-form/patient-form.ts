@@ -1,11 +1,18 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, ValidatorFn, AbstractControl, ValidationErrors } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+  ValidatorFn,
+  AbstractControl,
+  ValidationErrors,
+} from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
-import { Router } from "@angular/router";
+import { Router } from '@angular/router';
 import { OdontogramComponent } from '../odontogram/odontogram';
 import { OdontogramState } from '../odontogram/dental-types';
-import { ToothZoneClickEvent } from '../tooth/tooth';
 
 // Custom validator to prevent future dates
 export function noFutureDateValidator(): ValidatorFn {
@@ -16,7 +23,7 @@ export function noFutureDateValidator(): ValidatorFn {
     const inputDate = new Date(control.value);
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
-    
+
     if (inputDate > today) {
       return { futureDate: true };
     }
@@ -91,7 +98,10 @@ export class PatientFormComponent implements OnInit, OnDestroy {
   // Odontogram state (not part of reactive form, managed separately)
   odontogramData: OdontogramState = {};
 
-  constructor(private fb: FormBuilder, private router: Router) {}
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
     this.initForm();
@@ -113,7 +123,10 @@ export class PatientFormComponent implements OnInit, OnDestroy {
         birthDate: this.fb.nonNullable.control('', [Validators.required, noFutureDateValidator()]),
         age: this.fb.nonNullable.control({ value: 0, disabled: true }),
         address: this.fb.nonNullable.control('', [Validators.required]),
-        phone: this.fb.nonNullable.control('', [Validators.required, Validators.pattern(/^\+?[\d\s-]{10,}$/)]),
+        phone: this.fb.nonNullable.control('', [
+          Validators.required,
+          Validators.pattern(/^\+?[\d\s-]{10,}$/),
+        ]),
         isOrthodontic: this.fb.nonNullable.control(false, [Validators.required]),
       }),
       insuranceInfo: this.fb.group({
@@ -157,27 +170,25 @@ export class PatientFormComponent implements OnInit, OnDestroy {
     const birthDateControl = personalDataGroup.get('birthDate');
     const ageControl = personalDataGroup.get('age');
 
-    birthDateControl?.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((birthDate: string) => {
-        if (birthDate) {
-          const age = this.calculateAge(new Date(birthDate));
-          ageControl?.setValue(age);
-        } else {
-          ageControl?.setValue(0);
-        }
-      });
+    birthDateControl?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((birthDate: string) => {
+      if (birthDate) {
+        const age = this.calculateAge(new Date(birthDate));
+        ageControl?.setValue(age);
+      } else {
+        ageControl?.setValue(0);
+      }
+    });
   }
 
   private calculateAge(birthDate: Date): number {
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
-    
+
     return Math.max(0, age);
   }
 
@@ -227,9 +238,9 @@ export class PatientFormComponent implements OnInit, OnDestroy {
   }
 
   private markAllAsTouched(): void {
-    Object.keys(this.patientForm.controls).forEach(groupKey => {
+    Object.keys(this.patientForm.controls).forEach((groupKey) => {
       const group = this.patientForm.get(groupKey) as FormGroup;
-      Object.keys(group.controls).forEach(key => {
+      Object.keys(group.controls).forEach((key) => {
         group.get(key)?.markAsTouched();
       });
     });
@@ -237,47 +248,5 @@ export class PatientFormComponent implements OnInit, OnDestroy {
 
   onCancel(): void {
     this.router.navigate(['/home']);
-  }
-
-  /**
-   * Handle tooth zone click from odontogram
-   * This can be expanded to open a modal for selecting treatment type
-   */
-  onToothClick(event: ToothZoneClickEvent): void {
-    console.log('Tooth clicked:', event);
-    // For now, toggle between healthy and caries as a demo
-    const { toothNumber, zone } = event;
-    
-    // Initialize tooth data if not exists
-    if (!this.odontogramData[toothNumber]) {
-      this.odontogramData[toothNumber] = [];
-    }
-
-    // Map zone to surface
-    const surfaceMap: Record<string, 'vestibular' | 'lingual' | 'distal' | 'mesial' | 'occlusal'> = {
-      'top': 'vestibular',
-      'bottom': 'lingual',
-      'left': 'mesial',
-      'right': 'distal',
-      'center': 'occlusal'
-    };
-    const surface = surfaceMap[zone];
-
-    // Check if there's already a treatment on this surface
-    const existingIndex = this.odontogramData[toothNumber].findIndex(t => t.surface === surface);
-    
-    if (existingIndex >= 0) {
-      // Remove existing treatment (toggle off)
-      this.odontogramData[toothNumber].splice(existingIndex, 1);
-    } else {
-      // Add caries treatment (demo - in real app, show a selection modal)
-      this.odontogramData[toothNumber].push({
-        type: 'caries',
-        surface: surface
-      });
-    }
-
-    // Trigger change detection by creating new object reference
-    this.odontogramData = { ...this.odontogramData };
   }
 }

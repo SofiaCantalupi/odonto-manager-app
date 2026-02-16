@@ -2,7 +2,9 @@
   <!-- Header -->
   <div class="text-center mb-6">
     <h3 class="text-lg font-semibold text-gray-800">Dental Chart (Odontogram)</h3>
-    <p class="text-sm text-gray-500 mt-1">Click on a tooth surface to record treatment</p>
+    <p class="text-sm text-gray-500 mt-1">
+      Click on any tooth to select it
+    </p>
   </div>
 
   <!-- Dental Chart -->
@@ -31,13 +33,8 @@
             <span class="tooth-number text-xs font-medium text-gray-600 mb-1">
               {{ toothId }}
             </span>
-            <!-- Tooth Component -->
-            <app-tooth
-              [toothNumber]="toothId"
-              [data]="getToothData(toothId)"
-              (zoneClick)="onToothZoneClick($event)"
-              (click)="$event.stopPropagation()"
-            ></app-tooth>
+            <!-- Tooth Component - Purely Presentational -->
+            <app-tooth [toothNumber]="toothId" [data]="getToothData(toothId)"></app-tooth>
           </div>
 
           <!-- Midline Separator (between 11 and 21) -->
@@ -67,13 +64,8 @@
             "
             (click)="selectTooth(toothId)"
           >
-            <!-- Tooth Component -->
-            <app-tooth
-              [toothNumber]="toothId"
-              [data]="getToothData(toothId)"
-              (zoneClick)="onToothZoneClick($event)"
-              (click)="$event.stopPropagation()"
-            ></app-tooth>
+            <!-- Tooth Component - Purely Presentational -->
+            <app-tooth [toothNumber]="toothId" [data]="getToothData(toothId)"></app-tooth>
             <!-- Tooth Number -->
             <span class="tooth-number text-xs font-medium text-gray-600 mt-1">
               {{ toothId }}

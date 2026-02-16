@@ -14,8 +14,7 @@
       [attr.points]="zones.top"
       [class]="getZoneClass('top')"
       class="tooth-zone"
-      (click)="onZoneClick('top')"
-      role="button"
+      role="presentation"
       [attr.aria-label]="getTooltip('top')"
     >
       <title>{{ getTooltip('top') }}</title>
@@ -26,8 +25,7 @@
       [attr.points]="zones.bottom"
       [class]="getZoneClass('bottom')"
       class="tooth-zone"
-      (click)="onZoneClick('bottom')"
-      role="button"
+      role="presentation"
       [attr.aria-label]="getTooltip('bottom')"
     >
       <title>{{ getTooltip('bottom') }}</title>
@@ -38,8 +36,7 @@
       [attr.points]="zones.left"
       [class]="getZoneClass('left')"
       class="tooth-zone"
-      (click)="onZoneClick('left')"
-      role="button"
+      role="presentation"
       [attr.aria-label]="getTooltip('left')"
     >
       <title>{{ getTooltip('left') }}</title>
@@ -50,8 +47,7 @@
       [attr.points]="zones.right"
       [class]="getZoneClass('right')"
       class="tooth-zone"
-      (click)="onZoneClick('right')"
-      role="button"
+      role="presentation"
       [attr.aria-label]="getTooltip('right')"
     >
       <title>{{ getTooltip('right') }}</title>
@@ -62,8 +58,7 @@
       [attr.points]="zones.center"
       [class]="getZoneClass('center')"
       class="tooth-zone"
-      (click)="onZoneClick('center')"
-      role="button"
+      role="presentation"
       [attr.aria-label]="getTooltip('center')"
     >
       <title>{{ getTooltip('center') }}</title>
@@ -74,16 +69,22 @@
     <!-- Cross Overlay (X) for Extraction (Blue) or Missing (Red) -->
     @if (hasCrossOverlay) {
       <g class="cross-overlay" pointer-events="none">
-        <line 
-          x1="5" y1="5" x2="95" y2="95" 
-          [attr.stroke]="crossColor" 
-          stroke-width="4" 
+        <line
+          x1="5"
+          y1="5"
+          x2="95"
+          y2="95"
+          [attr.stroke]="crossColor"
+          stroke-width="4"
           stroke-linecap="round"
         />
-        <line 
-          x1="95" y1="5" x2="5" y2="95" 
-          [attr.stroke]="crossColor" 
-          stroke-width="4" 
+        <line
+          x1="95"
+          y1="5"
+          x2="5"
+          y2="95"
+          [attr.stroke]="crossColor"
+          stroke-width="4"
           stroke-linecap="round"
         />
       </g>
@@ -91,11 +92,13 @@
 
     <!-- Circle Overlay for Crown (Black outline, transparent fill) -->
     @if (hasCircleOverlay) {
-      <circle 
+      <circle
         class="circle-overlay"
-        cx="50" cy="50" r="45" 
-        fill="transparent" 
-        stroke="#000000" 
+        cx="50"
+        cy="50"
+        r="45"
+        fill="transparent"
+        stroke="#000000"
         stroke-width="3"
         pointer-events="none"
       />
@@ -109,5 +112,3 @@
     </div>
   }
 </div>
-
-

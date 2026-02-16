@@ -1,6 +1,7 @@
 import { Component, input, output, computed, OnInit } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { ToothComponent, ToothSurfaceData, ToothZoneClickEvent } from '../tooth/tooth';
+import { ToothComponent, ToothSurfaceData } from '../tooth/tooth';
 import {
   OdontogramState,
   ToothTreatment,
@@ -18,9 +19,36 @@ import { Observable } from 'rxjs';
   templateUrl: './odontogram.html',
   styleUrl: './odontogram.css',
 })
+/**
+ * OdontogramComponent - Dental Chart with Selection Management
+ *
+ * ARCHITECTURE:
+ * This component manages ONLY tooth selection via click interactions.
+ * All visual rendering is PURELY REACTIVE to @Input data.
+ *
+ * INTERACTION MODEL:
+ * - Click on tooth (number OR SVG) → selectTooth(toothId)
+ * - Selection state syncs to Firebase via OdontogramService
+ * - Selected tooth gets blue highlight
+ *
+ * DATA FLOW:
+ * - Parent provides @Input data (OdontogramState from DB)
+ * - ToothComponent is purely presentational (@Input only)
+ * - Tooth surface colors show existing treatments only
+ * - No temporary/transient state created by clicks
+ *
+ * PARENT RESPONSIBILITY:
+ * - Listen to selection changes via selectedTeeth$ observable
+ * - Open modal/form when user wants to add/edit treatments
+ * - Update @Input data when treatments are confirmed
+ * - ToothComponent automatically re-renders based on new data
+ */
 export class OdontogramComponent implements OnInit {
   constructor(private selectionService: OdontogramService) {
     this.selectedTeeth$ = this.selectionService.selectedTeeth$;
+    this.selectedTeethSignal = toSignal(this.selectionService.selectedTeeth$, {
+      initialValue: new Set<number>(),
+    });
   }
   /**
    * Signal Input: The current state of the odontogram
@@ -39,19 +67,19 @@ export class OdontogramComponent implements OnInit {
   dataChange = output<OdontogramChangeEvent>();
 
   /**
-   * Output: Emitted when a tooth zone is clicked
-   */
-  toothClick = output<ToothZoneClickEvent>();
-
-  /**
    * Observable for selected teeth state
    */
   selectedTeeth$: Observable<Set<number>>;
 
   /**
+   * Signal for selected teeth state (reactive template bindings)
+   */
+  readonly selectedTeethSignal: () => Set<number>;
+
+  /**
    * Computed property for selected teeth count
    */
-  selectedCount = computed(() => this.selectionService.getSelectedCount());
+  selectedCount = computed(() => this.selectedTeethSignal().size);
 
   /**
    * Upper arch teeth (FDI numbering: right to left from patient's perspective)
@@ -114,18 +142,6 @@ export class OdontogramComponent implements OnInit {
   }
 
   /**
-   * Handle tooth zone click events
-   * @param event - The click event from ToothComponent
-   */
-  onToothZoneClick(event: ToothZoneClickEvent): void {
-    if (this.readonly()) {
-      return;
-    }
-
-    this.toothClick.emit(event);
-  }
-
-  /**
    * Check if a tooth number is in the right side (quadrants 1 and 4)
    */
   isRightSide(toothNumber: number): boolean {
@@ -161,6 +177,7 @@ export class OdontogramComponent implements OnInit {
 
   /**
    * Handle tooth selection toggle
+   * Click on tooth (anywhere) toggles selection and syncs to Firebase
    * @param toothId - The FDI tooth number to select/deselect
    */
   selectTooth(toothId: number): void {

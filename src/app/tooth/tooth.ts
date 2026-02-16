@@ -1,19 +1,25 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { 
-  TreatmentType, 
-  TREATMENT_CONFIG, 
+import {
+  TreatmentType,
+  TREATMENT_CONFIG,
   TreatmentSymbol,
   isWholeToothTreatment,
   getTreatmentSymbol,
-  getTreatmentColor
+  getTreatmentColor,
 } from '../odontogram/dental-types';
 
 // Zone identifier type
 export type ToothZone = 'center' | 'top' | 'bottom' | 'left' | 'right';
 
 // Condition types for dental states
-export type ToothCondition = 'healthy' | 'caries' | 'filling' | 'crown' | 'extraction' | 'root-canal';
+export type ToothCondition =
+  | 'healthy'
+  | 'caries'
+  | 'filling'
+  | 'crown'
+  | 'extraction'
+  | 'root-canal';
 
 // Data structure for tooth state
 export interface ToothSurfaceData {
@@ -26,13 +32,6 @@ export interface ToothSurfaceData {
   wholeToothTreatment?: TreatmentType;
 }
 
-// Event emitted when a zone is clicked
-export interface ToothZoneClickEvent {
-  toothNumber: number;
-  zone: ToothZone;
-  currentCondition?: ToothCondition;
-}
-
 @Component({
   selector: 'app-tooth',
   standalone: true,
@@ -40,6 +39,23 @@ export interface ToothZoneClickEvent {
   templateUrl: './tooth.html',
   styleUrl: './tooth.css',
 })
+/**
+ * ToothComponent - Pure Presentational Component
+ *
+ * IMPORTANT: This component is PURELY VISUAL and REACTIVE
+ * It does NOT emit any events from zone clicks
+ * All rendering is based solely on @Input data
+ *
+ * Responsibility:
+ * - Render SVG based on tooth surface data
+ * - Display whole-tooth treatments (cross, circle, text labels)
+ * - Apply CSS classes based on conditions (caries, filing, etc.)
+ *
+ * Parent responsibility (OdontogramComponent):
+ * - Handle tooth selection (blue highlight)
+ * - Handle modal for treatment selection
+ * - Update data when treatments are confirmed
+ */
 export class ToothComponent {
   /**
    * The FDI number of the tooth (1-32 for permanent, 51-85 for deciduous)
@@ -48,13 +64,9 @@ export class ToothComponent {
 
   /**
    * Current state of each tooth surface/zone
+   * This is the ONLY way to control what the component displays
    */
   @Input() data: ToothSurfaceData = {};
-
-  /**
-   * Event emitted when a zone is clicked
-   */
-  @Output() zoneClick = new EventEmitter<ToothZoneClickEvent>();
 
   /**
    * SVG viewBox dimensions for easy coordinate calculation
@@ -83,7 +95,7 @@ export class ToothComponent {
     // Left triangle (Mesial)
     left: '0,0 30,30 30,70 0,100',
     // Right triangle (Distal)
-    right: '70,30 100,0 100,100 70,70'
+    right: '70,30 100,0 100,100 70,70',
   };
 
   /**
@@ -94,7 +106,7 @@ export class ToothComponent {
     top: 'Vestibular',
     bottom: 'Lingual/Palatal',
     left: 'Mesial',
-    right: 'Distal'
+    right: 'Distal',
   };
 
   /**
@@ -160,7 +172,7 @@ export class ToothComponent {
    */
   getZoneClass(zone: ToothZone): string {
     const condition = this.data[zone];
-    
+
     if (!condition || condition === 'healthy') {
       return 'zone-default';
     }
@@ -182,18 +194,7 @@ export class ToothComponent {
   }
 
   /**
-   * Handle click on a zone
-   */
-  onZoneClick(zone: ToothZone): void {
-    this.zoneClick.emit({
-      toothNumber: this.toothNumber,
-      zone,
-      currentCondition: this.data[zone]
-    });
-  }
-
-  /**
-   * Get tooltip text for a zone
+   * Get tooltip text for a zone (for accessibility)
    */
   getTooltip(zone: ToothZone): string {
     const label = this.zoneLabels[zone];
