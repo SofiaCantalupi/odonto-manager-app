@@ -1,6 +1,7 @@
 import { Component, input, output, computed, OnInit } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ToothComponent, ToothSurfaceData } from '../tooth/tooth';
 import {
   OdontogramState,
@@ -8,14 +9,26 @@ import {
   OdontogramChangeEvent,
   surfaceToZone,
   treatmentToCondition,
+  TREATMENT_CONFIG,
+  TreatmentType,
 } from './dental-types';
 import { OdontogramService } from './odontogram.service';
 import { Observable } from 'rxjs';
+import { NzButtonModule } from 'ng-zorro-antd/button';
+import { NzModalModule } from 'ng-zorro-antd/modal';
+import { NzRadioModule } from 'ng-zorro-antd/radio';
 
 @Component({
   selector: 'app-odontogram',
   standalone: true,
-  imports: [CommonModule, ToothComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ToothComponent,
+    NzButtonModule,
+    NzModalModule,
+    NzRadioModule,
+  ],
   templateUrl: './odontogram.html',
   styleUrl: './odontogram.css',
 })
@@ -80,6 +93,16 @@ export class OdontogramComponent implements OnInit {
    * Computed property for selected teeth count
    */
   selectedCount = computed(() => this.selectedTeethSignal().size);
+
+  /**
+   * Treatment modal state
+   */
+  isTreatmentModalVisible = false;
+  selectedTreatment: TreatmentType | null = null;
+  readonly treatmentOptions = Object.entries(TREATMENT_CONFIG).map(([key, config]) => ({
+    value: key as TreatmentType,
+    label: config.label,
+  }));
 
   /**
    * Upper arch teeth (FDI numbering: right to left from patient's perspective)
@@ -173,6 +196,7 @@ export class OdontogramComponent implements OnInit {
    */
   ngOnInit(): void {
     this.selectedTeeth$ = this.selectionService.selectedTeeth$;
+    console.log('Opciones de tratamiento disponibles:', this.treatmentOptions);
   }
 
   /**
@@ -197,6 +221,31 @@ export class OdontogramComponent implements OnInit {
    */
   clearSelection(): void {
     this.selectionService.clearSelection();
+  }
+
+  /**
+   * Open treatment selection modal
+   */
+  openTreatmentModal(): void {
+    this.isTreatmentModalVisible = true;
+  }
+
+  /**
+   * Close treatment selection modal
+   */
+  closeTreatmentModal(): void {
+    this.isTreatmentModalVisible = false;
+  }
+
+  /**
+   * Confirm selected treatment (hook for modal-driven updates)
+   */
+  confirmTreatment(): void {
+    if (!this.selectedTreatment) {
+      return;
+    }
+
+    this.isTreatmentModalVisible = false;
   }
 
   /**
