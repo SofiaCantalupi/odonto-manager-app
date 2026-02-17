@@ -120,7 +120,6 @@ export class OdontogramService {
   private updateSelectionInFirebase(teeth: Set<number>): void {
     const userId = this.firebaseService.getCurrentUserId();
     if (!userId) {
-      console.warn('Cannot update Firebase: User not authenticated');
       // Still update local state for immediate UI feedback
       this.selectedTeethSubject.next(teeth);
       return;
@@ -132,12 +131,8 @@ export class OdontogramService {
     // Update Firebase
     this.firebaseService
       .writeData(path, data.length > 0 ? data : null)
-      .then(() => {
-        console.log('Selected teeth updated in Firebase:', data);
-        // Local state will be updated via Firebase listener
-      })
       .catch((error) => {
-        console.error('Failed to update Firebase:', error);
+        console.error('Failed to update selectedTeeth in Firebase:', error);
         // Fallback: still update local state
         this.selectedTeethSubject.next(teeth);
       });
@@ -182,36 +177,33 @@ export class OdontogramService {
   ): Promise<void> {
     const userId = this.firebaseService.getCurrentUserId();
     if (!userId) {
-      console.warn('Cannot save treatments: User not authenticated');
-      return Promise.reject('User not authenticated');
+      return Promise.reject(new Error('User not authenticated'));
     }
 
     if (!payload || payload.length === 0) {
-      return Promise.resolve(); // Resolve immediately if empty
+      return Promise.resolve();
     }
 
     // Create array of promises for all treatment saves
     const savePromises = payload.map((record) => {
       const path = FIREBASE_PATHS.treatments(userId, record.toothId);
-      return this.firebaseService
-        .writeData(path, {
-          type: record.treatment,
-          surfaces: record.surfaces,
-          timestamp: new Date().toISOString(),
-        })
-        .then(() => {
-          console.log(`✅ Treatment saved for tooth ${record.toothId}`);
-        })
-        .catch((error) => {
-          console.error(`❌ Failed to save treatment for tooth ${record.toothId}:`, error);
-          throw error; // Re-throw to let caller know about failure
-        });
+      return this.firebaseService.writeData(path, {
+        type: record.treatment,
+        surfaces: record.surfaces,
+        timestamp: new Date().toISOString(),
+      });
     });
 
     // Wait for ALL treatment saves to complete
-    return Promise.all(savePromises).then(() => {
-      console.log('✅ All treatments saved successfully');
-    });
+    return Promise.all(savePromises)
+      .catch((error) => {
+        console.error('Error saving treatments to Firebase:', error);
+        throw error;
+      })
+      .then(() => {
+        // Explicitly return void
+        return;
+      });
   }
 
   /**
@@ -408,7 +400,6 @@ export class OdontogramService {
 
     try {
       await this.firebaseService.writeData(path, stateToSave);
-      console.log(`Initial odontogram state saved for patient ${patientId}`);
     } catch (error) {
       console.error(`Failed to save initial state for patient ${patientId}:`, error);
       throw error;
@@ -431,7 +422,6 @@ export class OdontogramService {
 
     try {
       const data = await this.firebaseService.readData(path);
-      console.log(`Initial odontogram state loaded for patient ${patientId}`, data);
       return data as OdontogramInitialState | null;
     } catch (error) {
       console.error(`Failed to load initial state for patient ${patientId}:`, error);
