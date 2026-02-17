@@ -208,7 +208,7 @@
   [nzOkDisabled]="!canConfirmSurfaceSelection()"
   (nzOnCancel)="closeSurfaceModal()"
   (nzOnOk)="confirmSurfaceSelection()"
-  [nzWidth]="500"
+  [nzWidth]="600"
 >
   <ng-container *nzModalContent>
     <div class="flex flex-col gap-6">
@@ -228,22 +228,105 @@
           <span class="font-semibold text-blue-600">{{ getCurrentSurfaceToothId() }}</span>
         </p>
 
-        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">
-          @for (surface of getSurfacesList(); track surface) {
-            <label
-              class="flex items-center gap-3 p-2 hover:bg-white rounded cursor-pointer transition"
+        <!-- Interactive SVG Map -->
+        <div class="flex flex-col md:flex-row gap-6 items-start">
+          <!-- Tooth SVG Visualization -->
+          <div class="shrink-0">
+            <div
+              class="inline-flex items-center justify-center p-4 bg-linear-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-gray-300"
             >
-              <input
-                type="checkbox"
-                [checked]="isSurfaceSelected(surface)"
-                (change)="toggleSurface(surface)"
-                class="w-4 h-4 cursor-pointer"
-              />
-              <span class="capitalize font-medium text-gray-700">{{
-                getSurfaceLabel(surface)
-              }}</span>
-            </label>
-          }
+              <svg
+                class="w-48 h-48"
+                viewBox="0 0 100 100"
+                xmlns="http://www.w3.org/2000/svg"
+                role="img"
+                aria-label="Tooth surface selector"
+              >
+                <!-- Vestibular (Top) - Outer surface -->
+                <polygon
+                  points="0,0 100,0 70,30 30,30"
+                  class="cursor-pointer transition-all duration-200 hover:opacity-80"
+                  [attr.fill]="isSurfaceSelected('vestibular') ? '#3b82f6' : '#f3f4f6'"
+                  stroke="#374151"
+                  stroke-width="2"
+                  (click)="toggleSurface('vestibular')"
+                />
+
+                <!-- Lingual (Bottom) - Inner surface -->
+                <polygon
+                  points="30,70 70,70 100,100 0,100"
+                  class="cursor-pointer transition-all duration-200 hover:opacity-80"
+                  [attr.fill]="isSurfaceSelected('lingual') ? '#3b82f6' : '#f3f4f6'"
+                  stroke="#374151"
+                  stroke-width="2"
+                  (click)="toggleSurface('lingual')"
+                />
+
+                <!-- Mesial (Left) - Toward midline -->
+                <polygon
+                  points="0,0 30,30 30,70 0,100"
+                  class="cursor-pointer transition-all duration-200 hover:opacity-80"
+                  [attr.fill]="isSurfaceSelected('mesial') ? '#3b82f6' : '#f3f4f6'"
+                  stroke="#374151"
+                  stroke-width="2"
+                  (click)="toggleSurface('mesial')"
+                />
+
+                <!-- Distal (Right) - Away from midline -->
+                <polygon
+                  points="70,30 100,0 100,100 70,70"
+                  class="cursor-pointer transition-all duration-200 hover:opacity-80"
+                  [attr.fill]="isSurfaceSelected('distal') ? '#3b82f6' : '#f3f4f6'"
+                  stroke="#374151"
+                  stroke-width="2"
+                  (click)="toggleSurface('distal')"
+                />
+
+                <!-- Occlusal (Center) - Chewing surface -->
+                <polygon
+                  points="30,30 70,30 70,70 30,70"
+                  class="cursor-pointer transition-all duration-200 hover:opacity-80"
+                  [attr.fill]="isSurfaceSelected('occlusal') ? '#3b82f6' : '#f3f4f6'"
+                  stroke="#374151"
+                  stroke-width="2"
+                  (click)="toggleSurface('occlusal')"
+                />
+
+                <!-- Surface Labels -->
+                <text
+                  x="50"
+                  y="50"
+                  text-anchor="middle"
+                  dominant-baseline="middle"
+                  class="text-xs font-semibold pointer-events-none"
+                  fill="#1f2937"
+                ></text>
+              </svg>
+            </div>
+            <p class="text-xs text-gray-500 text-center mt-2">Click surfaces to select/deselect</p>
+          </div>
+
+          <!-- Checkbox List (Backup Selection Method) -->
+          <div class="flex-1">
+            <p class="text-sm font-medium text-gray-700 mb-3">Surfaces</p>
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">
+              @for (surface of getSurfacesList(); track surface) {
+                <label
+                  class="flex items-center gap-3 p-2 hover:bg-white rounded cursor-pointer transition"
+                >
+                  <input
+                    type="checkbox"
+                    [checked]="isSurfaceSelected(surface)"
+                    (change)="toggleSurface(surface)"
+                    class="w-4 h-4 cursor-pointer"
+                  />
+                  <span class="capitalize font-medium text-gray-700">{{
+                    getSurfaceLabel(surface)
+                  }}</span>
+                </label>
+              }
+            </div>
+          </div>
         </div>
       </div>
 

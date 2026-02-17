@@ -256,24 +256,47 @@ export class OdontogramComponent implements OnInit {
 
   /**
    * Confirm selected treatment (hook for modal-driven updates)
+   * Captures selection before clearing to ensure data integrity
    */
-  confirmTreatment(): void {
+  async confirmTreatment(): Promise<void> {
+    console.log('🦷 confirmTreatment called with treatment:', this.selectedTreatment);
+    
     if (!this.selectedTreatment) {
+      console.warn('🦷 No treatment selected');
       return;
     }
 
+    // CAPTURE selection BEFORE clearing anything
+    const capturedSelectedTeeth = this.getSelectedToothIds();
+    const treatment = this.selectedTreatment;
+    
+    console.log('🦷 Captured selected teeth:', capturedSelectedTeeth);
+
     this.isTreatmentModalVisible = false;
 
-    if (this.isSurfaceTreatment(this.selectedTreatment)) {
+    if (this.isSurfaceTreatment(treatment)) {
+      console.log('🦷 Surface treatment detected, opening surface selection modal');
       this.initializeSurfaceSelection();
       this.isSurfaceModalVisible = true;
       return;
     }
 
-    this.lastTreatmentPayload = this.buildWholeToothPayload(this.selectedTreatment);
-    this.selectionService.saveTreatmentSelections(this.lastTreatmentPayload);
-    this.selectedTreatment = null;
-    this.clearSelection();
+    // Build payload with captured teeth IDs
+    console.log('🦷 Whole-tooth treatment, building payload');
+    this.lastTreatmentPayload = this.buildWholeToothPayload(treatment, capturedSelectedTeeth);
+    console.log('🦷 Built payload:', this.lastTreatmentPayload);
+    
+    // Save with captured data and WAIT for completion
+    try {
+      await this.selectionService.saveTreatmentSelections(this.lastTreatmentPayload);
+      console.log('🦷 Save completed, clearing selection');
+      
+      // Only clear AFTER service has successfully saved
+      this.selectedTreatment = null;
+      this.clearSelection();
+    } catch (error) {
+      console.error('🦷 Failed to save treatments:', error);
+    }
   }
 
   /**
@@ -297,16 +320,45 @@ export class OdontogramComponent implements OnInit {
 
   /**
    * Confirm surface selections and build payload
+   * Captures selection BEFORE clearing to ensure data integrity
    */
-  confirmSurfaceSelection(): void {
+  async confirmSurfaceSelection(): Promise<void> {
+    console.log('🦷 confirmSurfaceSelection called for treatment:', this.selectedTreatment);
+    
     if (!this.selectedTreatment) {
+      console.warn('🦷 No treatment selected in surface confirmation');
       return;
     }
-    this.lastTreatmentPayload = this.buildSurfacePayload(this.selectedTreatment);
-    this.selectionService.saveTreatmentSelections(this.lastTreatmentPayload);
-    this.isSurfaceModalVisible = false;
-    this.selectedTreatment = null;
-    this.clearSelection();
+    
+    // CAPTURE selections BEFORE any state changes
+    const capturedSelectedTeeth = this.getSelectedToothIds();
+    const capturedSurfaceSelections = { ...this.surfaceSelections }; // Shallow copy of object
+    const treatment = this.selectedTreatment;
+    
+    console.log('🦷 Captured selected teeth:', capturedSelectedTeeth);
+    console.log('🦷 Captured surface selections:', capturedSurfaceSelections);
+    
+    // Build payload with captured data (not live signals)
+    this.lastTreatmentPayload = capturedSelectedTeeth.map((toothId) => ({
+      toothId,
+      surfaces: Array.from(capturedSurfaceSelections[toothId] ?? []),
+      treatment,
+    }));
+    
+    console.log('🦷 Built complete payload:', this.lastTreatmentPayload);
+    
+    // Save with captured data and WAIT for completion
+    try {
+      await this.selectionService.saveTreatmentSelections(this.lastTreatmentPayload);
+      console.log('🦷 Save completed, clearing selection');
+      
+      // Only AFTER service has successfully saved, clear selections
+      this.isSurfaceModalVisible = false;
+      this.selectedTreatment = null;
+      this.clearSelection();
+    } catch (error) {
+      console.error('🦷 Failed to save surface treatments:', error);
+    }
   }
 
   /**
@@ -392,7 +444,8 @@ export class OdontogramComponent implements OnInit {
    * Get selected tooth IDs as array
    */
   getSelectedToothIds(): number[] {
-    return Array.from(this.selectedTeethSignal()).sort((a, b) => a - b);
+    const selected = this.selectedTeethSignal();
+    return Array.from(selected).sort((a, b) => a - b);
   }
 
   /**
@@ -416,34 +469,44 @@ export class OdontogramComponent implements OnInit {
 
   /**
    * Build payload for surface treatments
+   * @param treatment - The treatment type
+   * @param selectedToothIds - Optional pre-captured selected tooth IDs (used to avoid signal changes)
    */
-  buildSurfacePayload(treatment: TreatmentType): Array<{
+  buildSurfacePayload(treatment: TreatmentType, selectedToothIds?: number[]): Array<{
     toothId: number;
     treatment: TreatmentType;
     surfaces: ToothSurface[];
   }> {
-    const ids = this.getSelectedToothIds();
-    return ids.map((toothId) => ({
+    const ids = selectedToothIds ?? this.getSelectedToothIds();
+    
+    const payload = ids.map((toothId) => ({
       toothId,
       surfaces: Array.from(this.surfaceSelections[toothId] ?? []),
       treatment,
     }));
+    
+    return payload;
   }
 
   /**
    * Build payload for whole-tooth treatments
+   * @param treatment - The treatment type
+   * @param selectedToothIds - Optional pre-captured selected tooth IDs (used to avoid signal changes)
    */
-  buildWholeToothPayload(treatment: TreatmentType): Array<{
+  buildWholeToothPayload(treatment: TreatmentType, selectedToothIds?: number[]): Array<{
     toothId: number;
     treatment: TreatmentType;
     surfaces: ToothSurface[];
   }> {
-    const ids = this.getSelectedToothIds();
-    return ids.map((toothId) => ({
+    const ids = selectedToothIds ?? this.getSelectedToothIds();
+    
+    const payload = ids.map((toothId) => ({
       toothId,
       surfaces: [],
       treatment,
     }));
+    
+    return payload;
   }
 
   /**

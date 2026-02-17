@@ -2,6 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, switchMap, startWith, tap } from 'rxjs';
 import { FirebaseService } from '../services/firebase.service';
 import { FIREBASE_PATHS } from '../services/firebase.config';
+import {
+  OdontogramInitialState,
+  ToothRecord,
+  GlobalToothStatus,
+  SurfaceTreatment,
+  ToothSurface,
+  TreatmentType,
+} from './dental-types';
 
 /**
  * OdontogramService - Manages tooth selection state and persistence
@@ -163,6 +171,7 @@ export class OdontogramService {
   /**
    * Save treatment selections for multiple teeth
    * @param payload - Array of treatment records with tooth ID, treatment type, and surfaces
+   * @returns Promise that resolves when all treatments are saved
    */
   saveTreatmentSelections(
     payload: Array<{
@@ -170,24 +179,277 @@ export class OdontogramService {
       treatment: string;
       surfaces: string[];
     }>,
-  ): void {
+  ): Promise<void> {
     const userId = this.firebaseService.getCurrentUserId();
     if (!userId) {
       console.warn('Cannot save treatments: User not authenticated');
-      return;
+      return Promise.reject('User not authenticated');
     }
 
-    payload.forEach((record) => {
+    if (!payload || payload.length === 0) {
+      return Promise.resolve(); // Resolve immediately if empty
+    }
+
+    // Create array of promises for all treatment saves
+    const savePromises = payload.map((record) => {
       const path = FIREBASE_PATHS.treatments(userId, record.toothId);
-      this.firebaseService
+      return this.firebaseService
         .writeData(path, {
           type: record.treatment,
           surfaces: record.surfaces,
           timestamp: new Date().toISOString(),
         })
+        .then(() => {
+          console.log(`✅ Treatment saved for tooth ${record.toothId}`);
+        })
         .catch((error) => {
-          console.error(`Failed to save treatment for tooth ${record.toothId}:`, error);
+          console.error(`❌ Failed to save treatment for tooth ${record.toothId}:`, error);
+          throw error; // Re-throw to let caller know about failure
         });
     });
+
+    // Wait for ALL treatment saves to complete
+    return Promise.all(savePromises).then(() => {
+      console.log('✅ All treatments saved successfully');
+    });
+  }
+
+  /**
+   * INITIAL STATE MANAGEMENT
+   * Methods for handling the patient's initial mouth condition
+   */
+
+  /**
+   * Validate if a treatment can be added to a tooth
+   *
+   * Rules:
+   * - If tooth has global status (missing, implant, crown, extraction), no other treatments allowed
+   * - A surface cannot have overlapping treatments (must replace existing)
+   *
+   * @param toothId - The tooth ID to check
+   * @param treatmentType - The treatment type attempting to add
+   * @param surface - Optional surface (required for surface treatments)
+   * @param state - The current odontogram state
+   * @returns Object with validation result and optional error message
+   */
+  canAddTreatment(
+    toothId: string,
+    treatmentType: TreatmentType,
+    surface: ToothSurface | undefined,
+    state: OdontogramInitialState,
+  ): { valid: boolean; error?: string } {
+    const tooth = state.teeth[toothId];
+
+    // If tooth doesn't exist, allow treatment
+    if (!tooth) {
+      return { valid: true };
+    }
+
+    // Rule 1: If tooth has global status, no other treatments can be added
+    if (tooth.status) {
+      return {
+        valid: false,
+        error: `Cannot add treatment: Tooth ${toothId} has global status "${tooth.status}". Remove it first.`,
+      };
+    }
+
+    // Rule 2: For surface treatments, check if surface already has treatment
+    if (surface && tooth.surfaces && tooth.surfaces[surface]) {
+      return { valid: true }; // Allow replacement
+    }
+
+    return { valid: true };
+  }
+
+  /**
+   * Add or update a treatment for a specific tooth
+   *
+   * @param toothId - The tooth ID
+   * @param treatmentType - The treatment type
+   * @param surface - Optional surface (required for surface treatments)
+   * @param state - Current odontogram state (will be mutated)
+   * @returns Updated OdontogramInitialState
+   */
+  addToothTreatment(
+    toothId: string,
+    treatmentType: TreatmentType,
+    surface: ToothSurface | undefined,
+    state: OdontogramInitialState,
+  ): OdontogramInitialState {
+    // Validate before adding
+    const validation = this.canAddTreatment(toothId, treatmentType, surface, state);
+    if (!validation.valid) {
+      throw new Error(validation.error);
+    }
+
+    // Ensure tooth record exists
+    if (!state.teeth[toothId]) {
+      state.teeth[toothId] = {};
+    }
+
+    const tooth = state.teeth[toothId];
+    const isGlobalStatus = this.isGlobalStatus(treatmentType);
+
+    if (isGlobalStatus) {
+      // Set global status
+      tooth.status = treatmentType as GlobalToothStatus;
+      tooth.surfaces = undefined; // Clear surfaces when setting global status
+    } else {
+      // Add to surfaces
+      if (!tooth.surfaces) {
+        tooth.surfaces = {} as Record<ToothSurface, SurfaceTreatment>;
+      }
+      if (surface && tooth.surfaces) {
+        tooth.surfaces[surface] = {
+          type: treatmentType,
+        };
+      }
+    }
+
+    return state;
+  }
+
+  /**
+   * Remove a treatment from a tooth
+   *
+   * @param toothId - The tooth ID
+   * @param surface - Optional surface (if removing surface treatment)
+   * @param state - Current odontogram state (will be mutated)
+   * @returns Updated OdontogramInitialState
+   */
+  removeToothTreatment(
+    toothId: string,
+    surface: ToothSurface | undefined,
+    state: OdontogramInitialState,
+  ): OdontogramInitialState {
+    const tooth = state.teeth[toothId];
+
+    if (!tooth) {
+      return state;
+    }
+
+    if (surface && tooth.surfaces) {
+      // Remove specific surface treatment
+      delete tooth.surfaces[surface];
+      if (Object.keys(tooth.surfaces).length === 0) {
+        tooth.surfaces = undefined;
+      }
+    } else {
+      // Remove global status
+      tooth.status = undefined;
+    }
+
+    return state;
+  }
+
+  /**
+   * Get treatment for a specific tooth surface
+   *
+   * @param toothId - The tooth ID
+   * @param surface - The surface to check
+   * @param state - The odontogram state
+   * @returns The surface treatment or undefined
+   */
+  getSurfaceTreatment(
+    toothId: string,
+    surface: ToothSurface,
+    state: OdontogramInitialState,
+  ): SurfaceTreatment | undefined {
+    const tooth = state.teeth[toothId];
+    return tooth?.surfaces?.[surface];
+  }
+
+  /**
+   * Get global status of a tooth
+   *
+   * @param toothId - The tooth ID
+   * @param state - The odontogram state
+   * @returns The global status or undefined
+   */
+  getToothStatus(toothId: string, state: OdontogramInitialState): GlobalToothStatus | undefined {
+    return state.teeth[toothId]?.status;
+  }
+
+  /**
+   * Check if a treatment type is a global status
+   *
+   * @param type - The treatment type
+   * @returns true if it's a global status
+   */
+  private isGlobalStatus(type: TreatmentType): boolean {
+    return ['missing', 'implant', 'crown', 'extraction', 'root-canal'].includes(type);
+  }
+
+  /**
+   * Save initial odontogram state to Firebase
+   *
+   * @param patientId - The patient ID
+   * @param state - The odontogram state to save
+   * @param generalNotes - Optional general clinical notes
+   * @returns Promise that resolves when saved
+   */
+  async saveInitialState(
+    patientId: string,
+    state: OdontogramInitialState,
+    generalNotes?: string,
+  ): Promise<void> {
+    const userId = this.firebaseService.getCurrentUserId();
+    if (!userId) {
+      throw new Error('Cannot save state: User not authenticated');
+    }
+
+    const stateToSave: OdontogramInitialState = {
+      ...state,
+      generalNotes: generalNotes || state.generalNotes,
+      dateRecorded: new Date().toISOString(),
+    };
+
+    const path = FIREBASE_PATHS.odontogramInitialState(userId, patientId);
+
+    try {
+      await this.firebaseService.writeData(path, stateToSave);
+      console.log(`Initial odontogram state saved for patient ${patientId}`);
+    } catch (error) {
+      console.error(`Failed to save initial state for patient ${patientId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Load initial odontogram state from Firebase
+   *
+   * @param patientId - The patient ID
+   * @returns Promise that resolves with the odontogram state
+   */
+  async loadInitialState(patientId: string): Promise<OdontogramInitialState | null> {
+    const userId = this.firebaseService.getCurrentUserId();
+    if (!userId) {
+      throw new Error('Cannot load state: User not authenticated');
+    }
+
+    const path = FIREBASE_PATHS.odontogramInitialState(userId, patientId);
+
+    try {
+      const data = await this.firebaseService.readData(path);
+      console.log(`Initial odontogram state loaded for patient ${patientId}`, data);
+      return data as OdontogramInitialState | null;
+    } catch (error) {
+      console.error(`Failed to load initial state for patient ${patientId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create an empty initial state
+   *
+   * @param generalNotes - Optional general clinical notes
+   * @returns New OdontogramInitialState
+   */
+  createEmptyState(generalNotes?: string): OdontogramInitialState {
+    return {
+      teeth: {},
+      generalNotes,
+      dateRecorded: new Date().toISOString(),
+    };
   }
 }

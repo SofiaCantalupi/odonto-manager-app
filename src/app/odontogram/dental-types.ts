@@ -138,6 +138,40 @@ export interface ToothTreatment {
 export type OdontogramState = Record<number, ToothTreatment[]>;
 
 /**
+ * Global status that affects the entire tooth (mutually exclusive with surface treatments)
+ */
+export type GlobalToothStatus = 'missing' | 'implant' | 'crown' | 'extraction';
+
+/**
+ * Surface-specific treatment record
+ */
+export interface SurfaceTreatment {
+  type: TreatmentType; // 'caries' or 'filling'
+}
+
+/**
+ * Tooth record in the initial state - can have either a global status OR surface treatments
+ */
+export interface ToothRecord {
+  /** Global status of the tooth (mutually exclusive with surfaces) */
+  status?: GlobalToothStatus;
+  /** Surface-specific treatments (only used if status is not set) */
+  surfaces?: Record<ToothSurface, SurfaceTreatment>;
+}
+
+/**
+ * Complete initial odontogram state for a patient
+ */
+export interface OdontogramInitialState {
+  /** Key: tooth ID (number as string), Value: tooth record */
+  teeth: Record<string, ToothRecord>;
+  /** General clinical notes about the patient's mouth */
+  generalNotes?: string;
+  /** Date when the state was recorded */
+  dateRecorded?: string;
+}
+
+/**
  * Event emitted when odontogram data changes
  */
 export interface OdontogramChangeEvent {
