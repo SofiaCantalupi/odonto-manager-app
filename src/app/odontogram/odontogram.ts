@@ -272,6 +272,8 @@ export class OdontogramComponent implements OnInit {
 
     this.lastTreatmentPayload = this.buildWholeToothPayload(this.selectedTreatment);
     this.selectionService.saveTreatmentSelections(this.lastTreatmentPayload);
+    this.selectedTreatment = null;
+    this.clearSelection();
   }
 
   /**
@@ -303,6 +305,8 @@ export class OdontogramComponent implements OnInit {
     this.lastTreatmentPayload = this.buildSurfacePayload(this.selectedTreatment);
     this.selectionService.saveTreatmentSelections(this.lastTreatmentPayload);
     this.isSurfaceModalVisible = false;
+    this.selectedTreatment = null;
+    this.clearSelection();
   }
 
   /**
