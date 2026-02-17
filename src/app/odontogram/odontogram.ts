@@ -11,12 +11,15 @@ import {
   treatmentToCondition,
   TREATMENT_CONFIG,
   TreatmentType,
+  ToothSurface,
 } from './dental-types';
 import { OdontogramService } from './odontogram.service';
 import { Observable } from 'rxjs';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzModalModule } from 'ng-zorro-antd/modal';
 import { NzRadioModule } from 'ng-zorro-antd/radio';
+import { NzStepsModule } from 'ng-zorro-antd/steps';
+import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 
 @Component({
   selector: 'app-odontogram',
@@ -28,6 +31,8 @@ import { NzRadioModule } from 'ng-zorro-antd/radio';
     NzButtonModule,
     NzModalModule,
     NzRadioModule,
+    NzStepsModule,
+    NzCheckboxModule,
   ],
   templateUrl: './odontogram.html',
   styleUrl: './odontogram.css',
@@ -40,7 +45,7 @@ import { NzRadioModule } from 'ng-zorro-antd/radio';
  * All visual rendering is PURELY REACTIVE to @Input data.
  *
  * INTERACTION MODEL:
- * - Click on tooth (number OR SVG) → selectTooth(toothId)
+ * - Click on tooth (number OR SVG) -> selectTooth(toothId)
  * - Selection state syncs to Firebase via OdontogramService
  * - Selected tooth gets blue highlight
  *
@@ -63,6 +68,7 @@ export class OdontogramComponent implements OnInit {
       initialValue: new Set<number>(),
     });
   }
+
   /**
    * Signal Input: The current state of the odontogram
    * Uses modern Angular 18+ signal input API
@@ -103,6 +109,18 @@ export class OdontogramComponent implements OnInit {
     value: key as TreatmentType,
     label: config.label,
   }));
+
+  /**
+   * Surface selection modal state
+   */
+  isSurfaceModalVisible = false;
+  currentSurfaceStep = 0;
+  surfaceSelections: Record<number, Set<ToothSurface>> = {};
+  lastTreatmentPayload: Array<{
+    toothId: number;
+    treatment: TreatmentType;
+    surfaces: ToothSurface[];
+  }> = [];
 
   /**
    * Upper arch teeth (FDI numbering: right to left from patient's perspective)
@@ -196,7 +214,6 @@ export class OdontogramComponent implements OnInit {
    */
   ngOnInit(): void {
     this.selectedTeeth$ = this.selectionService.selectedTeeth$;
-    console.log('Opciones de tratamiento disponibles:', this.treatmentOptions);
   }
 
   /**
@@ -246,6 +263,183 @@ export class OdontogramComponent implements OnInit {
     }
 
     this.isTreatmentModalVisible = false;
+
+    if (this.isSurfaceTreatment(this.selectedTreatment)) {
+      this.initializeSurfaceSelection();
+      this.isSurfaceModalVisible = true;
+      return;
+    }
+
+    this.lastTreatmentPayload = this.buildWholeToothPayload(this.selectedTreatment);
+    this.selectionService.saveTreatmentSelections(this.lastTreatmentPayload);
+  }
+
+  /**
+   * Initialize surface selection for selected teeth
+   */
+  initializeSurfaceSelection(): void {
+    const selectedToothIds = this.getSelectedToothIds();
+    this.surfaceSelections = {};
+    selectedToothIds.forEach((toothId) => {
+      this.surfaceSelections[toothId] = new Set<ToothSurface>();
+    });
+    this.currentSurfaceStep = 0;
+  }
+
+  /**
+   * Close surface selection modal
+   */
+  closeSurfaceModal(): void {
+    this.isSurfaceModalVisible = false;
+  }
+
+  /**
+   * Confirm surface selections and build payload
+   */
+  confirmSurfaceSelection(): void {
+    if (!this.selectedTreatment) {
+      return;
+    }
+    this.lastTreatmentPayload = this.buildSurfacePayload(this.selectedTreatment);
+    this.selectionService.saveTreatmentSelections(this.lastTreatmentPayload);
+    this.isSurfaceModalVisible = false;
+  }
+
+  /**
+   * Move to previous tooth in surface selection
+   */
+  prevSurfaceStep(): void {
+    this.currentSurfaceStep = Math.max(0, this.currentSurfaceStep - 1);
+  }
+
+  /**
+   * Move to next tooth in surface selection
+   */
+  nextSurfaceStep(): void {
+    const maxIndex = this.getSelectedToothIds().length - 1;
+    this.currentSurfaceStep = Math.min(maxIndex, this.currentSurfaceStep + 1);
+  }
+
+  /**
+   * Jump to a specific tooth step
+   */
+  goToSurfaceStep(index: number): void {
+    this.currentSurfaceStep = index;
+  }
+
+  /**
+   * Toggle a surface selection for the active tooth
+   */
+  toggleSurface(surface: ToothSurface): void {
+    const toothId = this.getCurrentSurfaceToothId();
+    if (!toothId) {
+      return;
+    }
+    const set = this.surfaceSelections[toothId] ?? new Set<ToothSurface>();
+    if (set.has(surface)) {
+      set.delete(surface);
+    } else {
+      set.add(surface);
+    }
+    this.surfaceSelections[toothId] = set;
+  }
+
+  /**
+   * Check if a surface is selected for the active tooth
+   */
+  isSurfaceSelected(surface: ToothSurface): boolean {
+    const toothId = this.getCurrentSurfaceToothId();
+    if (!toothId) {
+      return false;
+    }
+    return this.surfaceSelections[toothId]?.has(surface) ?? false;
+  }
+
+  /**
+   * Determine if treatment needs surface selection
+   */
+  isSurfaceTreatment(treatment: TreatmentType): boolean {
+    return treatment === 'caries' || treatment === 'filling';
+  }
+
+  /**
+   * Get list of available surfaces
+   */
+  getSurfacesList(): ToothSurface[] {
+    return ['mesial', 'distal', 'vestibular', 'lingual', 'occlusal'] as ToothSurface[];
+  }
+
+  /**
+   * Get human-readable label for a surface
+   */
+  getSurfaceLabel(surface: ToothSurface): string {
+    const labels: Record<ToothSurface, string> = {
+      mesial: 'Mesial',
+      distal: 'Distal',
+      vestibular: 'Vestibular',
+      lingual: 'Lingual/Palatal',
+      occlusal: 'Occlusal/Incisal',
+      center: 'Occlusal/Incisal',
+    };
+    return labels[surface] || surface;
+  }
+
+  /**
+   * Get selected tooth IDs as array
+   */
+  getSelectedToothIds(): number[] {
+    return Array.from(this.selectedTeethSignal()).sort((a, b) => a - b);
+  }
+
+  /**
+   * Get active tooth for surface selection
+   */
+  getCurrentSurfaceToothId(): number | null {
+    const ids = this.getSelectedToothIds();
+    return ids.length > 0 ? ids[this.currentSurfaceStep] : null;
+  }
+
+  /**
+   * Whether all selected teeth have at least one surface
+   */
+  canConfirmSurfaceSelection(): boolean {
+    const ids = this.getSelectedToothIds();
+    if (ids.length === 0) {
+      return false;
+    }
+    return ids.every((id) => (this.surfaceSelections[id]?.size ?? 0) > 0);
+  }
+
+  /**
+   * Build payload for surface treatments
+   */
+  buildSurfacePayload(treatment: TreatmentType): Array<{
+    toothId: number;
+    treatment: TreatmentType;
+    surfaces: ToothSurface[];
+  }> {
+    const ids = this.getSelectedToothIds();
+    return ids.map((toothId) => ({
+      toothId,
+      surfaces: Array.from(this.surfaceSelections[toothId] ?? []),
+      treatment,
+    }));
+  }
+
+  /**
+   * Build payload for whole-tooth treatments
+   */
+  buildWholeToothPayload(treatment: TreatmentType): Array<{
+    toothId: number;
+    treatment: TreatmentType;
+    surfaces: ToothSurface[];
+  }> {
+    const ids = this.getSelectedToothIds();
+    return ids.map((toothId) => ({
+      toothId,
+      surfaces: [],
+      treatment,
+    }));
   }
 
   /**

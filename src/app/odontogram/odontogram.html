@@ -188,14 +188,89 @@
   (nzOnOk)="confirmTreatment()"
 >
   <ng-container *nzModalContent>
-      <nz-radio-group [(ngModel)]="selectedTreatment" class="flex flex-col gap-3">
-        @for (option of treatmentOptions; track option.value) {
-          <label nz-radio [nzValue]="option.value" class="block py-1">
-            {{ option.label }}
-          </label>
-        } @empty {
-          <p class="text-gray-500 italic">No hay opciones disponibles.</p>
-        }
-      </nz-radio-group>
+    <nz-radio-group [(ngModel)]="selectedTreatment" class="flex flex-col gap-3">
+      @for (option of treatmentOptions; track option.value) {
+        <label nz-radio [nzValue]="option.value" class="block py-1">
+          {{ option.label }}
+        </label>
+      } @empty {
+        <p class="text-gray-500 italic">No options available.</p>
+      }
+    </nz-radio-group>
+  </ng-container>
+</nz-modal>
+
+<nz-modal
+  [(nzVisible)]="isSurfaceModalVisible"
+  nzTitle="Select Surfaces"
+  nzOkText="Apply"
+  nzCancelText="Cancel"
+  [nzOkDisabled]="!canConfirmSurfaceSelection()"
+  (nzOnCancel)="closeSurfaceModal()"
+  (nzOnOk)="confirmSurfaceSelection()"
+  [nzWidth]="500"
+>
+  <ng-container *nzModalContent>
+    <div class="flex flex-col gap-6">
+      <!-- Step Navigation -->
+      @if (getSelectedToothIds().length > 1) {
+        <nz-steps [nzCurrent]="currentSurfaceStep" nzSize="small">
+          @for (toothId of getSelectedToothIds(); track toothId; let i = $index) {
+            <nz-step [nzTitle]="toothId.toString()" (click)="goToSurfaceStep(i)"></nz-step>
+          }
+        </nz-steps>
+      }
+
+      <!-- Surface Selection for Current Tooth -->
+      <div class="flex flex-col gap-4">
+        <p class="text-sm font-medium text-gray-700">
+          Select surfaces for tooth
+          <span class="font-semibold text-blue-600">{{ getCurrentSurfaceToothId() }}</span>
+        </p>
+
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">
+          @for (surface of getSurfacesList(); track surface) {
+            <label
+              class="flex items-center gap-3 p-2 hover:bg-white rounded cursor-pointer transition"
+            >
+              <input
+                type="checkbox"
+                [checked]="isSurfaceSelected(surface)"
+                (change)="toggleSurface(surface)"
+                class="w-4 h-4 cursor-pointer"
+              />
+              <span class="capitalize font-medium text-gray-700">{{
+                getSurfaceLabel(surface)
+              }}</span>
+            </label>
+          }
+        </div>
+      </div>
+
+      <!-- Navigation Buttons -->
+      @if (getSelectedToothIds().length > 1) {
+        <div class="flex items-center justify-between gap-2">
+          <button
+            nz-button
+            nzType="default"
+            (click)="prevSurfaceStep()"
+            [disabled]="currentSurfaceStep === 0"
+          >
+            Previous
+          </button>
+          <span class="text-sm text-gray-600">
+            {{ currentSurfaceStep + 1 }} of {{ getSelectedToothIds().length }}
+          </span>
+          <button
+            nz-button
+            nzType="default"
+            (click)="nextSurfaceStep()"
+            [disabled]="currentSurfaceStep === getSelectedToothIds().length - 1"
+          >
+            Next
+          </button>
+        </div>
+      }
+    </div>
   </ng-container>
 </nz-modal>

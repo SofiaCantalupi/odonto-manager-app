@@ -159,4 +159,35 @@ export class OdontogramService {
   getSelectedCount(): number {
     return this.selectedTeethSubject.value.size;
   }
+
+  /**
+   * Save treatment selections for multiple teeth
+   * @param payload - Array of treatment records with tooth ID, treatment type, and surfaces
+   */
+  saveTreatmentSelections(
+    payload: Array<{
+      toothId: number;
+      treatment: string;
+      surfaces: string[];
+    }>,
+  ): void {
+    const userId = this.firebaseService.getCurrentUserId();
+    if (!userId) {
+      console.warn('Cannot save treatments: User not authenticated');
+      return;
+    }
+
+    payload.forEach((record) => {
+      const path = FIREBASE_PATHS.treatments(userId, record.toothId);
+      this.firebaseService
+        .writeData(path, {
+          type: record.treatment,
+          surfaces: record.surfaces,
+          timestamp: new Date().toISOString(),
+        })
+        .catch((error) => {
+          console.error(`Failed to save treatment for tooth ${record.toothId}:`, error);
+        });
+    });
+  }
 }
