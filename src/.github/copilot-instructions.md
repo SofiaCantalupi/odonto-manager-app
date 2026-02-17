@@ -1,5 +1,10 @@
 # Project Context - Dental Clinic Management
 
+## Odontogram Logic
+- **Mutual Exclusion**: If a tooth status is 'missing', 'extraction', 'implant', or 'crown', disable all surface-level treatments (caries, filling).
+- **Surface Integrity**: A single tooth surface (Mesial, Distal, Vestibular, Lingual, Occlusal) cannot have overlapping treatments. Adding a 'filling' replaces a 'caries' on that specific surface.
+- **Initial State vs Evolution**: Distinguish between pre-existing conditions (no date required) and new treatments (timestamp required).
+
 ## Tech Stack
 - Angular (latest version)
 - NG-ZORRO Ant Design
