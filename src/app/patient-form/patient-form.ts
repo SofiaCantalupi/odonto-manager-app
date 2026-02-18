@@ -13,6 +13,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { Router } from '@angular/router';
 import { OdontogramComponent } from '../odontogram/odontogram';
 import { OdontogramState } from '../odontogram/dental-types';
+import { OdontogramService } from '../odontogram/odontogram.service';
 
 // Custom validator to prevent future dates
 export function noFutureDateValidator(): ValidatorFn {
@@ -101,6 +102,7 @@ export class PatientFormComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private router: Router,
+    private odontogramService: OdontogramService,
   ) {}
 
   ngOnInit(): void {
@@ -218,11 +220,21 @@ export class PatientFormComponent implements OnInit, OnDestroy {
     return control ? control.hasError(errorName) && (control.dirty || control.touched) : false;
   }
 
-  onSave(): void {
+  async onSave(): Promise<void> {
     if (this.patientForm.valid) {
       const formValue = this.patientForm.getRawValue();
+      const patientId = this.buildPatientId(formValue.personalData.idCard);
+
+      try {
+        await this.odontogramService.persistOdontogram(patientId);
+      } catch (error) {
+        console.error('Failed to persist odontogram draft:', error);
+        alert('Could not save odontogram. Please try again.');
+        return;
+      }
+
       console.log('Patient Form Value:', formValue);
-      alert('Patient saved! Check console for details.');
+      alert('Patient and odontogram saved successfully.');
       this.resetForm();
     } else {
       this.markAllAsTouched();
@@ -235,6 +247,8 @@ export class PatientFormComponent implements OnInit, OnDestroy {
     // Reset nested form groups to ensure all validation states are cleared
     this.patientForm.markAsPristine();
     this.patientForm.markAsUntouched();
+    this.odontogramData = {};
+    this.odontogramService.clearTemporaryState();
   }
 
   private markAllAsTouched(): void {
@@ -247,6 +261,12 @@ export class PatientFormComponent implements OnInit, OnDestroy {
   }
 
   onCancel(): void {
+    this.odontogramService.clearTemporaryState();
     this.router.navigate(['/home']);
+  }
+
+  private buildPatientId(idCard: string): string {
+    const normalizedId = (idCard || 'patient').trim().replace(/\s+/g, '-').toLowerCase();
+    return `${normalizedId}-${Date.now()}`;
   }
 }

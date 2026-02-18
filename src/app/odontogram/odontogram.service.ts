@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, switchMap, startWith, tap, map } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { FirebaseService } from '../services/firebase.service';
 import { FIREBASE_PATHS } from '../services/firebase.config';
 import {
@@ -27,63 +27,23 @@ export class OdontogramService {
   // BehaviorSubject to hold the set of selected tooth IDs
   private selectedTeethSubject: BehaviorSubject<Set<number>>;
 
-  // Observable for template binding with Firebase sync
+  // Draft odontogram state (local-only until persisted)
+  private temporaryStateSubject = new BehaviorSubject<OdontogramState>({});
+
+  // Observable for template binding
   selectedTeeth$: Observable<Set<number>>;
+  temporaryState$: Observable<OdontogramState> = this.temporaryStateSubject.asObservable();
 
   constructor() {
     const initialTeeth = new Set<number>();
     this.selectedTeethSubject = new BehaviorSubject<Set<number>>(initialTeeth);
-
-    // Setup Firebase synchronization
-    this.setupFirebaseSync();
 
     // Expose selectable observable
     this.selectedTeeth$ = this.selectedTeethSubject.asObservable();
   }
 
   /**
-   * Setup Firebase real-time synchronization
-   * Listen to Firebase changes and update local state
-   */
-  private setupFirebaseSync(): void {
-    // Wait for Firebase initialization and user auth
-    this.firebaseService.currentUser$
-      .pipe(
-        switchMap((user) => {
-          if (!user) {
-            // No user, return empty observable
-            return new Observable<Set<number>>((observer) => {
-              observer.next(new Set());
-              observer.complete();
-            });
-          }
-
-          // User exists, listen to their selected teeth in Firebase
-          const path = FIREBASE_PATHS.selectedTeeth(user.uid);
-          return this.firebaseService.listenToData(path).pipe(
-            startWith(null),
-            tap((data) => {
-              if (data && Array.isArray(data)) {
-                // Data from Firebase
-                this.selectedTeethSubject.next(new Set(data));
-              } else if (data === null) {
-                // No data in Firebase yet
-                this.selectedTeethSubject.next(new Set());
-              }
-            }),
-          );
-        }),
-      )
-      .subscribe({
-        error: (error) => {
-          console.error('Error syncing with Firebase:', error);
-        },
-      });
-  }
-
-  /**
-   * Toggle selection of a single tooth
-   * Updates both local state and Firebase simultaneously
+   * Toggle selection of a single tooth (local-only)
    * @param toothId - The FDI tooth number to toggle
    */
   toggleToothSelection(toothId: number): void {
@@ -96,7 +56,7 @@ export class OdontogramService {
       updated.add(toothId);
     }
 
-    this.updateSelectionInFirebase(updated);
+    this.selectedTeethSubject.next(updated);
   }
 
   /**
@@ -105,39 +65,14 @@ export class OdontogramService {
    */
   selectTeeth(toothIds: number[]): void {
     const updated = new Set(toothIds);
-    this.updateSelectionInFirebase(updated);
+    this.selectedTeethSubject.next(updated);
   }
 
   /**
    * Clear all selections
    */
   clearSelection(): void {
-    this.updateSelectionInFirebase(new Set());
-  }
-
-  /**
-   * Update selection in Firebase and local state
-   * @param teeth - Set of selected tooth IDs
-   */
-  private updateSelectionInFirebase(teeth: Set<number>): void {
-    const userId = this.firebaseService.getCurrentUserId();
-    if (!userId) {
-      // Still update local state for immediate UI feedback
-      this.selectedTeethSubject.next(teeth);
-      return;
-    }
-
-    const path = FIREBASE_PATHS.selectedTeeth(userId);
-    const data = Array.from(teeth).sort((a, b) => a - b);
-
-    // Update Firebase
-    this.firebaseService
-      .writeData(path, data.length > 0 ? data : null)
-      .catch((error) => {
-        console.error('Failed to update selectedTeeth in Firebase:', error);
-        // Fallback: still update local state
-        this.selectedTeethSubject.next(teeth);
-      });
+    this.selectedTeethSubject.next(new Set());
   }
 
   /**
@@ -165,69 +100,178 @@ export class OdontogramService {
     return this.selectedTeethSubject.value.size;
   }
 
-  /**
-   * Save treatment selections for multiple teeth
-   * @param payload - Array of treatment records with tooth ID, treatment type, and surfaces
-   * @returns Promise that resolves when all treatments are saved
-   */
-  saveTreatmentSelections(
-    payload: Array<{
-      toothId: number;
-      treatment: string;
-      surfaces: string[];
-    }>,
-  ): Promise<void> {
-    const userId = this.firebaseService.getCurrentUserId();
-    if (!userId) {
-      return Promise.reject(new Error('User not authenticated'));
-    }
-
-    if (!payload || payload.length === 0) {
-      return Promise.resolve();
-    }
-
-    // Create array of promises for all treatment saves
-    const savePromises = payload.map((record) => {
-      const path = FIREBASE_PATHS.treatments(userId, record.toothId);
-      return this.firebaseService.writeData(path, {
-        type: record.treatment,
-        surfaces: record.surfaces,
-        timestamp: new Date().toISOString(),
-      });
-    });
-
-    // Wait for ALL treatment saves to complete
-    return Promise.all(savePromises)
-      .catch((error) => {
-        console.error('Error saving treatments to Firebase:', error);
-        throw error;
-      })
-      .then(() => {
-        // Explicitly return void
-        return;
-      });
+  setTemporaryState(state: OdontogramState): void {
+    this.temporaryStateSubject.next(this.cloneState(state));
   }
 
-  /**
-   * Listen to persisted treatment state and map it into OdontogramState
-   */
-  listenToOdontogramState(): Observable<OdontogramState> {
-    return this.firebaseService.currentUser$.pipe(
-      switchMap((user) => {
-        if (!user) {
-          return new Observable<OdontogramState>((observer) => {
-            observer.next({});
-            observer.complete();
-          });
+  getTemporaryState(): OdontogramState {
+    return this.cloneState(this.temporaryStateSubject.value);
+  }
+
+  clearTemporaryState(): void {
+    this.temporaryStateSubject.next({});
+  }
+
+  applyDraftTreatment(
+    state: OdontogramState,
+    payload: {
+      toothId: number;
+      treatment: TreatmentType;
+      surfaces: ToothSurface[];
+    },
+  ): OdontogramState {
+    const next = this.cloneState(state);
+    const toothId = payload.toothId;
+    const existing = next[toothId] ? [...next[toothId]] : [];
+    const isSurface = this.isSurfaceTreatmentType(payload.treatment);
+
+    if (isSurface) {
+      const validation = this.validateSurfaceTreatment(existing, payload.treatment, payload.surfaces);
+      if (!validation.valid) {
+        throw new Error(validation.error);
+      }
+
+      const updated = [...existing];
+      for (const surface of payload.surfaces) {
+        for (let index = updated.length - 1; index >= 0; index--) {
+          if (updated[index].surface === surface) {
+            updated.splice(index, 1);
+          }
+        }
+        updated.push({
+          type: payload.treatment,
+          surface,
+          date: new Date().toISOString(),
+        });
+      }
+      next[toothId] = updated;
+      return next;
+    }
+
+    next[toothId] = [
+      {
+        type: payload.treatment,
+        date: new Date().toISOString(),
+      },
+    ];
+    return next;
+  }
+
+  async persistOdontogram(patientId: string): Promise<void> {
+    const userId = this.firebaseService.getCurrentUserId();
+    if (!userId) {
+      throw new Error('Cannot persist odontogram: User not authenticated');
+    }
+
+    const draftState = this.temporaryStateSubject.value;
+    const serialized = this.serializeOdontogramState(draftState);
+    const path = FIREBASE_PATHS.odontogramTreatments(userId, patientId);
+
+    await this.firebaseService.writeData(path, Object.keys(serialized).length > 0 ? serialized : null);
+  }
+
+  async loadPersistedOdontogram(patientId: string): Promise<OdontogramState> {
+    const userId = this.firebaseService.getCurrentUserId();
+    if (!userId) {
+      throw new Error('Cannot load odontogram: User not authenticated');
+    }
+
+    const path = FIREBASE_PATHS.odontogramTreatments(userId, patientId);
+    const data = await this.firebaseService.readData(path);
+    return this.normalizeTreatmentsNode(data);
+  }
+
+  async initializeDraftForPatient(patientId?: string): Promise<void> {
+    if (!patientId) {
+      this.clearTemporaryState();
+      return;
+    }
+
+    const persisted = await this.loadPersistedOdontogram(patientId);
+    this.setTemporaryState(persisted);
+  }
+
+  private validateSurfaceTreatment(
+    existingTreatments: ToothTreatment[],
+    treatmentType: TreatmentType,
+    surfaces: ToothSurface[],
+  ): { valid: boolean; error?: string } {
+    if (!this.isSurfaceTreatmentType(treatmentType)) {
+      return { valid: true };
+    }
+
+    if (!surfaces.length) {
+      return {
+        valid: false,
+        error: 'At least one surface must be selected for this treatment.',
+      };
+    }
+
+    const blockingGlobalStatus = existingTreatments.find((treatment) =>
+      this.isGlobalBlockingType(treatment.type),
+    );
+
+    if (blockingGlobalStatus) {
+      return {
+        valid: false,
+        error: `Cannot add surface treatment: tooth has status "${blockingGlobalStatus.type}".`,
+      };
+    }
+
+    return { valid: true };
+  }
+
+  private isSurfaceTreatmentType(type: TreatmentType): boolean {
+    return type === 'caries' || type === 'filling';
+  }
+
+  private isGlobalBlockingType(type: TreatmentType): boolean {
+    return ['missing', 'implant', 'crown', 'extraction', 'root-canal'].includes(type);
+  }
+
+  private serializeOdontogramState(state: OdontogramState): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
+
+    for (const [toothKey, treatments] of Object.entries(state)) {
+      if (!treatments || treatments.length === 0) {
+        continue;
+      }
+
+      const groupedSurfaceTreatments: Record<string, Set<ToothSurface>> = {};
+      const records: Array<{ type: TreatmentType; surfaces: ToothSurface[]; timestamp: string }> = [];
+
+      for (const treatment of treatments) {
+        if (treatment.surface) {
+          if (!groupedSurfaceTreatments[treatment.type]) {
+            groupedSurfaceTreatments[treatment.type] = new Set<ToothSurface>();
+          }
+          groupedSurfaceTreatments[treatment.type].add(treatment.surface);
+          continue;
         }
 
-        const path = `users/${user.uid}/treatments`;
-        return this.firebaseService.listenToData(path).pipe(
-          map((data) => this.normalizeTreatmentsNode(data)),
-          startWith({} as OdontogramState),
-        );
-      }),
-    );
+        records.push({
+          type: treatment.type,
+          surfaces: [],
+          timestamp: treatment.date || new Date().toISOString(),
+        });
+      }
+
+      for (const [type, surfaces] of Object.entries(groupedSurfaceTreatments)) {
+        records.push({
+          type: type as TreatmentType,
+          surfaces: Array.from(surfaces),
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      if (records.length === 1) {
+        result[toothKey] = records[0];
+      } else if (records.length > 1) {
+        result[toothKey] = records;
+      }
+    }
+
+    return result;
   }
 
   private normalizeTreatmentsNode(data: unknown): OdontogramState {
@@ -235,7 +279,7 @@ export class OdontogramService {
       return {};
     }
 
-    const rawNode = data as Record<string, any>;
+    const rawNode = data as Record<string, unknown>;
     const result: OdontogramState = {};
 
     for (const [toothKey, rawValue] of Object.entries(rawNode)) {
@@ -313,6 +357,18 @@ export class OdontogramService {
       'filling',
       'implant',
     ].includes(value);
+  }
+
+  private cloneState(state: OdontogramState): OdontogramState {
+    const result: OdontogramState = {};
+    for (const [toothKey, treatments] of Object.entries(state)) {
+      const toothId = Number(toothKey);
+      if (Number.isNaN(toothId)) {
+        continue;
+      }
+      result[toothId] = treatments.map((treatment) => ({ ...treatment }));
+    }
+    return result;
   }
 
   private isToothSurface(value: unknown): value is ToothSurface {
