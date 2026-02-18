@@ -14,6 +14,7 @@ import { Router } from '@angular/router';
 import { OdontogramComponent } from '../odontogram/odontogram';
 import { OdontogramState } from '../odontogram/dental-types';
 import { OdontogramService } from '../odontogram/odontogram.service';
+import { Location } from '@angular/common';
 
 // Custom validator to prevent future dates
 export function noFutureDateValidator(): ValidatorFn {
@@ -103,6 +104,7 @@ export class PatientFormComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private router: Router,
     private odontogramService: OdontogramService,
+    private Location: Location
   ) {}
 
   ngOnInit(): void {
@@ -261,8 +263,7 @@ export class PatientFormComponent implements OnInit, OnDestroy {
   }
 
   onCancel(): void {
-    this.odontogramService.clearTemporaryState();
-    this.router.navigate(['/home']);
+    this.Location.back();
   }
 
   private buildPatientId(idCard: string): string {
