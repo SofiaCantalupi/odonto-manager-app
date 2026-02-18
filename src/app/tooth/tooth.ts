@@ -2,10 +2,7 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   TreatmentType,
-  TREATMENT_CONFIG,
-  TreatmentSymbol,
   isWholeToothTreatment,
-  getTreatmentSymbol,
   getTreatmentColor,
 } from '../odontogram/dental-types';
 
@@ -140,25 +137,6 @@ export class ToothComponent {
   }
 
   /**
-   * Check if tooth has a text label overlay (root-canal or implant)
-   */
-  get hasTextOverlay(): boolean {
-    const treatment = this.data.wholeToothTreatment;
-    if (!treatment) return false;
-    return treatment === 'root-canal' || treatment === 'implant';
-  }
-
-  /**
-   * Get the text label for text overlay treatments
-   */
-  get textLabel(): string {
-    const treatment = this.data.wholeToothTreatment;
-    if (treatment === 'root-canal') return 'TC';
-    if (treatment === 'implant') return 'IM';
-    return '';
-  }
-
-  /**
    * Get the color for the cross overlay
    */
   get crossColor(): string {
@@ -168,29 +146,44 @@ export class ToothComponent {
   }
 
   /**
-   * Get the CSS class for a specific zone based on its condition
+   * Resolve SVG fill color for each surface zone from configured treatment colors
    */
-  getZoneClass(zone: ToothZone): string {
+  getZoneFill(zone: ToothZone): string {
     const condition = this.data[zone];
 
-    if (!condition || condition === 'healthy') {
-      return 'zone-default';
+    if (condition === 'caries') {
+      return getTreatmentColor('caries');
     }
 
-    switch (condition) {
-      case 'caries':
-        return 'zone-caries';
-      case 'filling':
-        return 'zone-filling';
-      case 'crown':
-        return 'zone-crown';
-      case 'extraction':
-        return 'zone-extraction';
-      case 'root-canal':
-        return 'zone-root-canal';
-      default:
-        return 'zone-default';
+    if (condition === 'filling') {
+      return getTreatmentColor('filling');
     }
+
+    return '#ffffff';
+  }
+
+  /**
+   * Resolve SVG stroke color for each surface zone
+   */
+  getZoneStroke(zone: ToothZone): string {
+    const condition = this.data[zone];
+
+    if (condition === 'caries') {
+      return getTreatmentColor('caries');
+    }
+
+    if (condition === 'filling') {
+      return getTreatmentColor('filling');
+    }
+
+    return '#6b7280';
+  }
+
+  /**
+   * Crown overlay color from treatment config
+   */
+  get crownColor(): string {
+    return getTreatmentColor('crown');
   }
 
   /**

@@ -12,6 +12,8 @@ import {
   TREATMENT_CONFIG,
   TreatmentType,
   ToothSurface,
+  isWholeToothTreatment,
+  getTreatmentSymbol,
 } from './dental-types';
 import { OdontogramService } from './odontogram.service';
 import { Observable } from 'rxjs';
@@ -62,10 +64,16 @@ import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
  * - ToothComponent automatically re-renders based on new data
  */
 export class OdontogramComponent implements OnInit {
+  private readonly persistedStateSignal: () => OdontogramState;
+
   constructor(private selectionService: OdontogramService) {
     this.selectedTeeth$ = this.selectionService.selectedTeeth$;
     this.selectedTeethSignal = toSignal(this.selectionService.selectedTeeth$, {
       initialValue: new Set<number>(),
+    });
+
+    this.persistedStateSignal = toSignal(this.selectionService.listenToOdontogramState(), {
+      initialValue: {},
     });
   }
 
@@ -94,6 +102,8 @@ export class OdontogramComponent implements OnInit {
    * Signal for selected teeth state (reactive template bindings)
    */
   readonly selectedTeethSignal: () => Set<number>;
+
+  readonly treatmentConfig = TREATMENT_CONFIG;
 
   /**
    * Computed property for selected teeth count
@@ -142,8 +152,89 @@ export class OdontogramComponent implements OnInit {
    * @returns Array of treatments for the tooth, or empty array
    */
   getTreatmentsForTooth(toothId: number): ToothTreatment[] {
-    const state = this.data();
+    return this.getToothCondition(toothId);
+  }
+
+  /**
+   * Get current condition entries for a specific tooth from OdontogramState
+   */
+  getToothCondition(toothId: number): ToothTreatment[] {
+    const state = this.getRenderState();
     return state[toothId] || [];
+  }
+
+  /**
+   * Merge parent-provided data with Firebase persisted state for rendering
+   */
+  private getRenderState(): OdontogramState {
+    const persisted = this.persistedStateSignal() ?? {};
+    const inputState = this.data() ?? {};
+
+    const merged: OdontogramState = { ...persisted };
+
+    for (const [toothKey, treatments] of Object.entries(inputState)) {
+      const toothId = Number(toothKey);
+      if (!Number.isNaN(toothId)) {
+        merged[toothId] = treatments;
+      }
+    }
+
+    return merged;
+  }
+
+  /**
+   * Get whole-tooth treatment (latest wins)
+   */
+  getWholeToothTreatment(toothId: number): TreatmentType | undefined {
+    const treatments = this.getToothCondition(toothId);
+    for (let index = treatments.length - 1; index >= 0; index--) {
+      const treatment = treatments[index];
+      if (!treatment.surface && isWholeToothTreatment(treatment.type)) {
+        return treatment.type;
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Get implant/root-canal short tag shown below tooth number
+   */
+  getToothTag(toothId: number): 'IM' | 'TC' | null {
+    const treatments = this.getToothCondition(toothId);
+    for (let index = treatments.length - 1; index >= 0; index--) {
+      const treatment = treatments[index];
+      if (treatment.surface) {
+        continue;
+      }
+
+      const symbol = getTreatmentSymbol(treatment.type);
+      if (symbol === 'text-IM') {
+        return 'IM';
+      }
+      if (symbol === 'text-RC') {
+        return 'TC';
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Get full label for text tag tooltip/accessibility
+   */
+  getToothTagLabel(toothId: number): string {
+    const treatments = this.getToothCondition(toothId);
+    for (let index = treatments.length - 1; index >= 0; index--) {
+      const treatment = treatments[index];
+      if (treatment.surface) {
+        continue;
+      }
+
+      const symbol = getTreatmentSymbol(treatment.type);
+      if (symbol === 'text-IM' || symbol === 'text-RC') {
+        return this.treatmentConfig[treatment.type].label;
+      }
+    }
+    return '';
   }
 
   /**
@@ -152,29 +243,17 @@ export class OdontogramComponent implements OnInit {
    * @returns ToothSurfaceData object with conditions per zone
    */
   getToothData(toothId: number): ToothSurfaceData {
-    const treatments = this.getTreatmentsForTooth(toothId);
+    const treatments = this.getToothCondition(toothId);
     const surfaceData: ToothSurfaceData = {};
 
     for (const treatment of treatments) {
       if (treatment.surface) {
-        // Map surface to zone and treatment to condition
         const zone = surfaceToZone(treatment.surface);
         const condition = treatmentToCondition(treatment.type);
         surfaceData[zone] = condition;
       } else {
-        // If no surface specified, apply to all zones for certain treatments
-        if (treatment.type === 'extraction' || treatment.type === 'missing') {
-          surfaceData.center = 'extraction';
-          surfaceData.top = 'extraction';
-          surfaceData.bottom = 'extraction';
-          surfaceData.left = 'extraction';
-          surfaceData.right = 'extraction';
-        } else if (treatment.type === 'crown') {
-          surfaceData.center = 'crown';
-          surfaceData.top = 'crown';
-          surfaceData.bottom = 'crown';
-          surfaceData.left = 'crown';
-          surfaceData.right = 'crown';
+        if (isWholeToothTreatment(treatment.type)) {
+          surfaceData.wholeToothTreatment = treatment.type;
         }
       }
     }
@@ -277,11 +356,11 @@ export class OdontogramComponent implements OnInit {
 
     // Build payload with captured teeth IDs
     this.lastTreatmentPayload = this.buildWholeToothPayload(treatment, capturedSelectedTeeth);
-    
+
     // Save with captured data and WAIT for completion
     try {
       await this.selectionService.saveTreatmentSelections(this.lastTreatmentPayload);
-      
+
       // Only clear AFTER service has successfully saved
       this.selectedTreatment = null;
       this.clearSelection();
@@ -317,23 +396,23 @@ export class OdontogramComponent implements OnInit {
     if (!this.selectedTreatment) {
       return;
     }
-    
+
     // CAPTURE selections BEFORE any state changes
     const capturedSelectedTeeth = this.getSelectedToothIds();
     const capturedSurfaceSelections = { ...this.surfaceSelections };
     const treatment = this.selectedTreatment;
-    
+
     // Build payload with captured data (not live signals)
     this.lastTreatmentPayload = capturedSelectedTeeth.map((toothId) => ({
       toothId,
       surfaces: Array.from(capturedSurfaceSelections[toothId] ?? []),
       treatment,
     }));
-    
+
     // Save with captured data and WAIT for completion
     try {
       await this.selectionService.saveTreatmentSelections(this.lastTreatmentPayload);
-      
+
       // Only AFTER service has successfully saved, clear selections
       this.isSurfaceModalVisible = false;
       this.selectedTreatment = null;

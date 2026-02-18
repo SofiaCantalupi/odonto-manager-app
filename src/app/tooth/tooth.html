@@ -12,8 +12,9 @@
     <!-- Top Zone (Vestibular) -->
     <polygon
       [attr.points]="zones.top"
-      [class]="getZoneClass('top')"
       class="tooth-zone"
+      [attr.fill]="getZoneFill('top')"
+      [attr.stroke]="getZoneStroke('top')"
       role="presentation"
       [attr.aria-label]="getTooltip('top')"
     >
@@ -23,8 +24,9 @@
     <!-- Bottom Zone (Lingual/Palatal) -->
     <polygon
       [attr.points]="zones.bottom"
-      [class]="getZoneClass('bottom')"
       class="tooth-zone"
+      [attr.fill]="getZoneFill('bottom')"
+      [attr.stroke]="getZoneStroke('bottom')"
       role="presentation"
       [attr.aria-label]="getTooltip('bottom')"
     >
@@ -34,8 +36,9 @@
     <!-- Left Zone (Mesial) -->
     <polygon
       [attr.points]="zones.left"
-      [class]="getZoneClass('left')"
       class="tooth-zone"
+      [attr.fill]="getZoneFill('left')"
+      [attr.stroke]="getZoneStroke('left')"
       role="presentation"
       [attr.aria-label]="getTooltip('left')"
     >
@@ -45,8 +48,9 @@
     <!-- Right Zone (Distal) -->
     <polygon
       [attr.points]="zones.right"
-      [class]="getZoneClass('right')"
       class="tooth-zone"
+      [attr.fill]="getZoneFill('right')"
+      [attr.stroke]="getZoneStroke('right')"
       role="presentation"
       [attr.aria-label]="getTooltip('right')"
     >
@@ -56,8 +60,9 @@
     <!-- Center Zone (Occlusal) - Drawn last to be on top -->
     <polygon
       [attr.points]="zones.center"
-      [class]="getZoneClass('center')"
       class="tooth-zone"
+      [attr.fill]="getZoneFill('center')"
+      [attr.stroke]="getZoneStroke('center')"
       role="presentation"
       [attr.aria-label]="getTooltip('center')"
     >
@@ -98,17 +103,10 @@
         cy="50"
         r="45"
         fill="transparent"
-        stroke="#000000"
+        [attr.stroke]="crownColor"
         stroke-width="3"
         pointer-events="none"
       />
     }
   </svg>
-
-  <!-- Text Label Badge for Root Canal (TC) or Implant (IM) -->
-  @if (hasTextOverlay) {
-    <div class="text-label-badge">
-      {{ textLabel }}
-    </div>
-  }
 </div>

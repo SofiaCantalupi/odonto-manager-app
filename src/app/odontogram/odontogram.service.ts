@@ -1,9 +1,11 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, switchMap, startWith, tap } from 'rxjs';
+import { BehaviorSubject, Observable, switchMap, startWith, tap, map } from 'rxjs';
 import { FirebaseService } from '../services/firebase.service';
 import { FIREBASE_PATHS } from '../services/firebase.config';
 import {
   OdontogramInitialState,
+  OdontogramState,
+  ToothTreatment,
   ToothRecord,
   GlobalToothStatus,
   SurfaceTreatment,
@@ -204,6 +206,121 @@ export class OdontogramService {
         // Explicitly return void
         return;
       });
+  }
+
+  /**
+   * Listen to persisted treatment state and map it into OdontogramState
+   */
+  listenToOdontogramState(): Observable<OdontogramState> {
+    return this.firebaseService.currentUser$.pipe(
+      switchMap((user) => {
+        if (!user) {
+          return new Observable<OdontogramState>((observer) => {
+            observer.next({});
+            observer.complete();
+          });
+        }
+
+        const path = `users/${user.uid}/treatments`;
+        return this.firebaseService.listenToData(path).pipe(
+          map((data) => this.normalizeTreatmentsNode(data)),
+          startWith({} as OdontogramState),
+        );
+      }),
+    );
+  }
+
+  private normalizeTreatmentsNode(data: unknown): OdontogramState {
+    if (!data || typeof data !== 'object') {
+      return {};
+    }
+
+    const rawNode = data as Record<string, any>;
+    const result: OdontogramState = {};
+
+    for (const [toothKey, rawValue] of Object.entries(rawNode)) {
+      const toothId = Number(toothKey);
+      if (Number.isNaN(toothId)) {
+        continue;
+      }
+
+      const normalized = this.normalizeToothTreatments(rawValue);
+      if (normalized.length > 0) {
+        result[toothId] = normalized;
+      }
+    }
+
+    return result;
+  }
+
+  private normalizeToothTreatments(rawValue: unknown): ToothTreatment[] {
+    if (Array.isArray(rawValue)) {
+      return rawValue.flatMap((item) => this.normalizeSingleTreatment(item));
+    }
+
+    return this.normalizeSingleTreatment(rawValue);
+  }
+
+  private normalizeSingleTreatment(rawValue: unknown): ToothTreatment[] {
+    if (!rawValue || typeof rawValue !== 'object') {
+      return [];
+    }
+
+    const record = rawValue as {
+      type?: unknown;
+      surfaces?: unknown;
+      notes?: unknown;
+      timestamp?: unknown;
+      date?: unknown;
+    };
+
+    if (typeof record.type !== 'string' || !this.isTreatmentType(record.type)) {
+      return [];
+    }
+
+    const surfaces = Array.isArray(record.surfaces)
+      ? record.surfaces.filter((surface): surface is ToothSurface => this.isToothSurface(surface))
+      : [];
+
+    const base: Pick<ToothTreatment, 'type' | 'notes' | 'date'> = {
+      type: record.type,
+      notes: typeof record.notes === 'string' ? record.notes : undefined,
+      date:
+        typeof record.date === 'string'
+          ? record.date
+          : typeof record.timestamp === 'string'
+            ? record.timestamp
+            : undefined,
+    };
+
+    if (surfaces.length === 0) {
+      return [base];
+    }
+
+    return surfaces.map((surface) => ({
+      ...base,
+      surface,
+    }));
+  }
+
+  private isTreatmentType(value: string): value is TreatmentType {
+    return [
+      'extraction',
+      'missing',
+      'caries',
+      'root-canal',
+      'crown',
+      'filling',
+      'implant',
+    ].includes(value);
+  }
+
+  private isToothSurface(value: unknown): value is ToothSurface {
+    if (typeof value !== 'string') {
+      return false;
+    }
+
+    return ['vestibular', 'lingual', 'distal', 'mesial', 'occlusal', 'center'].includes(value);
   }
 
   /**

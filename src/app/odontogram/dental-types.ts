@@ -33,7 +33,7 @@ export type TreatmentScope = 'surface' | 'whole-tooth';
 /**
  * Symbol type for whole-tooth treatments
  */
-export type TreatmentSymbol = 'cross' | 'circle' | 'text-TC' | 'text-IM' | 'none';
+export type TreatmentSymbol = 'cross' | 'circle' | 'text-RC' | 'text-IM' | 'none';
 
 /**
  * Configuration for a treatment type's visual representation
@@ -77,23 +77,23 @@ export const TREATMENT_CONFIG: Record<TreatmentType, TreatmentConfig> = {
   caries: {
     label: 'Caries',
     scope: 'surface',
-    color: '#3b82f6', // Blue-500
-    bgClass: 'bg-blue-500',
-    strokeClass: 'stroke-blue-500',
-    symbol: 'none',
-  },
-  filling: {
-    label: 'Filling (Obturación)',
-    scope: 'surface',
     color: '#ef4444', // Red-500
     bgClass: 'bg-red-500',
     strokeClass: 'stroke-red-500',
     symbol: 'none',
   },
+  filling: {
+    label: 'Filling',
+    scope: 'surface',
+    color: '#3b82f6', // Blue-500
+    bgClass: 'bg-blue-500',
+    strokeClass: 'stroke-blue-500',
+    symbol: 'none',
+  },
   crown: {
     label: 'Crown',
     scope: 'whole-tooth',
-    color: '#000000', // Black
+    color: '#000000',
     bgClass: 'bg-black',
     strokeClass: 'stroke-black',
     symbol: 'circle',
@@ -101,15 +101,15 @@ export const TREATMENT_CONFIG: Record<TreatmentType, TreatmentConfig> = {
   'root-canal': {
     label: 'Root Canal',
     scope: 'whole-tooth',
-    color: '#000000', // Black
+    color: '#000000',
     bgClass: 'bg-black',
     strokeClass: 'stroke-black',
-    symbol: 'text-TC',
+    symbol: 'text-RC',
   },
   implant: {
     label: 'Implant',
     scope: 'whole-tooth',
-    color: '#000000', // Black
+    color: '#000000',
     bgClass: 'bg-black',
     strokeClass: 'stroke-black',
     symbol: 'text-IM',
@@ -212,17 +212,18 @@ export function treatmentToCondition(
 ): 'healthy' | 'caries' | 'filling' | 'crown' | 'extraction' | 'root-canal' {
   switch (type) {
     case 'caries':
-    case 'extraction':
-      return 'caries'; // Blue fill
+      return 'caries';
     case 'filling':
-    case 'missing':
-      return 'filling'; // Red fill
+      return 'filling';
     case 'crown':
       return 'crown';
+    case 'extraction':
+    case 'missing':
+      return 'extraction';
     case 'root-canal':
       return 'root-canal';
     case 'implant':
-      return 'caries'; // Blue fill
+      return 'healthy';
     default:
       return 'healthy';
   }

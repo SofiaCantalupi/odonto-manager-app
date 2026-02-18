@@ -32,6 +32,25 @@
             <span class="tooth-number text-xs font-medium text-gray-600 mb-1">
               {{ toothId }}
             </span>
+            @if (getToothTag(toothId); as toothTag) {
+              <svg
+                class="w-8 h-4 mb-1"
+                viewBox="0 0 32 16"
+                role="img"
+                [attr.aria-label]="getToothTagLabel(toothId)"
+              >
+                <text
+                  x="16"
+                  y="12"
+                  text-anchor="middle"
+                  font-size="10"
+                  font-weight="700"
+                  fill="#000000"
+                >
+                  {{ toothTag }}
+                </text>
+              </svg>
+            }
             <!-- Tooth Component - Purely Presentational -->
             <app-tooth [toothNumber]="toothId" [data]="getToothData(toothId)"></app-tooth>
           </div>
@@ -69,6 +88,25 @@
             <span class="tooth-number text-xs font-medium text-gray-600 mt-1">
               {{ toothId }}
             </span>
+            @if (getToothTag(toothId); as toothTag) {
+              <svg
+                class="w-8 h-4 mt-1"
+                viewBox="0 0 32 16"
+                role="img"
+                [attr.aria-label]="getToothTagLabel(toothId)"
+              >
+                <text
+                  x="16"
+                  y="12"
+                  text-anchor="middle"
+                  font-size="10"
+                  font-weight="700"
+                  fill="#000000"
+                >
+                  {{ toothTag }}
+                </text>
+              </svg>
+            }
           </div>
 
           <!-- Midline Separator (between 41 and 31) -->
@@ -139,14 +177,20 @@
 
       <!-- Caries - Blue Square -->
       <div class="legend-item flex items-center gap-2">
-        <span class="w-4 h-4 rounded-sm bg-blue-500"></span>
-        <span class="text-sm text-gray-600">Caries</span>
+        <span
+          class="w-4 h-4 rounded-sm"
+          [style.background-color]="treatmentConfig['caries'].color"
+        ></span>
+        <span class="text-sm text-gray-600">{{ treatmentConfig['caries'].label }}</span>
       </div>
 
-      <!-- Filling - Red Square -->
+      <!-- Filling - Blue Square -->
       <div class="legend-item flex items-center gap-2">
-        <span class="w-4 h-4 rounded-sm bg-red-500"></span>
-        <span class="text-sm text-gray-600">Filling</span>
+        <span
+          class="w-4 h-4 rounded-sm"
+          [style.background-color]="treatmentConfig['filling'].color"
+        ></span>
+        <span class="text-sm text-gray-600">{{ treatmentConfig['filling'].label }}</span>
       </div>
 
       <!-- Crown - Black Circle Outline -->
@@ -157,11 +201,11 @@
         <span class="text-sm text-gray-600">Crown</span>
       </div>
 
-      <!-- Root Canal - TC Text -->
+      <!-- Root Canal - RC Text -->
       <div class="legend-item flex items-center gap-2">
         <span
           class="inline-flex items-center justify-center w-5 h-4 bg-black text-white text-[10px] font-bold rounded-sm"
-          >TC</span
+          >RC</span
         >
         <span class="text-sm text-gray-600">Root Canal</span>
       </div>
