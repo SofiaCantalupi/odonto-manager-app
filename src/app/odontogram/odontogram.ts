@@ -70,11 +70,15 @@ export class OdontogramComponent implements OnInit {
   isSurfaceModalVisible = false;
   currentSurfaceStep = 0;
   surfaceSelections: Record<number, Set<ToothSurface>> = {};
+  surfaceValidationMessage: string | null = null;
   lastTreatmentPayload: Array<{
     toothId: number;
     treatment: TreatmentType;
     surfaces: ToothSurface[];
   }> = [];
+
+  isConfirmReplaceModalVisible = false;
+  private pendingConfirmCallback: (() => void) | null = null;
 
   readonly upperArch: number[] = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
   readonly lowerArch: number[] = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
@@ -182,6 +186,10 @@ export class OdontogramComponent implements OnInit {
     return quadrant === 1 || quadrant === 4;
   }
 
+  isUpperArchTooth(toothId: number): boolean {
+    return toothId >= 10 && toothId <= 29;
+  }
+
   getQuadrantLabel(toothNumber: number): string {
     const quadrant = Math.floor(toothNumber / 10);
     switch (quadrant) {
@@ -211,6 +219,7 @@ export class OdontogramComponent implements OnInit {
   }
 
   openTreatmentModal(): void {
+    this.selectedTreatment = null;
     this.isTreatmentModalVisible = true;
   }
 
@@ -220,6 +229,10 @@ export class OdontogramComponent implements OnInit {
 
   confirmTreatment(): void {
     if (!this.selectedTreatment) {
+      return;
+    }
+
+    if (this.isTreatmentOptionDisabled(this.selectedTreatment)) {
       return;
     }
 
@@ -256,6 +269,7 @@ export class OdontogramComponent implements OnInit {
 
   closeSurfaceModal(): void {
     this.isSurfaceModalVisible = false;
+    this.surfaceValidationMessage = null;
   }
 
   confirmSurfaceSelection(): void {
@@ -273,10 +287,17 @@ export class OdontogramComponent implements OnInit {
       treatment,
     }));
 
+    if (this.hasAnySelectedSurfaceConflict()) {
+      this.pendingConfirmCallback = () => this.applyPayloadToDraftStateAfterConfirm();
+      this.isConfirmReplaceModalVisible = true;
+      return;
+    }
+
     try {
       this.applyPayloadToDraftState(this.lastTreatmentPayload);
       this.isSurfaceModalVisible = false;
       this.selectedTreatment = null;
+      this.surfaceValidationMessage = null;
       this.clearSelection();
     } catch (error) {
       console.error('Failed to update odontogram draft surfaces:', error);
@@ -331,6 +352,9 @@ export class OdontogramComponent implements OnInit {
       set.add(surface);
     }
     this.surfaceSelections[toothId] = set;
+    this.surfaceValidationMessage = this.hasAnySelectedSurfaceConflict()
+      ? 'Warning: applying caries will replace existing filling on selected surfaces.'
+      : null;
   }
 
   isSurfaceSelected(surface: ToothSurface): boolean {
@@ -376,7 +400,78 @@ export class OdontogramComponent implements OnInit {
     if (ids.length === 0) {
       return false;
     }
-    return ids.every((id) => (this.surfaceSelections[id]?.size ?? 0) > 0);
+    if (!ids.every((id) => (this.surfaceSelections[id]?.size ?? 0) > 0)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  isTreatmentOptionDisabled(treatment: TreatmentType): boolean {
+    const requiresNoGlobalStatus = this.isSurfaceTreatment(treatment) || treatment === 'root-canal';
+
+    if (!requiresNoGlobalStatus) {
+      return false;
+    }
+
+    const selectedIds = this.getSelectedToothIds();
+    if (selectedIds.length === 0) {
+      return false;
+    }
+
+    return selectedIds.some((toothId) => this.hasBlockingGlobalStatus(toothId));
+  }
+
+  getTreatmentOptionDisabledReason(treatment: TreatmentType): string | null {
+    if (!this.isTreatmentOptionDisabled(treatment)) {
+      return null;
+    }
+
+    if (treatment === 'root-canal') {
+      return 'Root canal is not allowed when a selected tooth already has a global status (missing, crown, extraction, implant, root canal).';
+    }
+
+    return 'Surface treatments are not allowed when a selected tooth has a global status (missing, crown, extraction, implant, root canal).';
+  }
+
+  isSurfaceDisabled(surface: ToothSurface): boolean {
+    return false;
+  }
+
+  private hasBlockingGlobalStatus(toothId: number): boolean {
+    const treatments = this.getToothCondition(toothId);
+    return treatments.some(
+      (treatment) =>
+        !treatment.surface &&
+        ['missing', 'crown', 'extraction', 'implant', 'root-canal'].includes(treatment.type),
+    );
+  }
+
+  private hasAnySelectedSurfaceConflict(): boolean {
+    if (this.selectedTreatment !== 'caries') {
+      return false;
+    }
+
+    return this.getSelectedToothIds().some((toothId) => {
+      const selectedSurfaces = this.surfaceSelections[toothId] ?? new Set<ToothSurface>();
+      return Array.from(selectedSurfaces).some((surface) => this.isSurfaceConflict(toothId, surface));
+    });
+  }
+
+  private isSurfaceConflict(toothId: number, surface: ToothSurface): boolean {
+    if (this.selectedTreatment !== 'caries') {
+      return false;
+    }
+
+    const treatments = this.getToothCondition(toothId);
+    for (let index = treatments.length - 1; index >= 0; index--) {
+      const treatment = treatments[index];
+      if (treatment.surface === surface) {
+        return treatment.type === 'filling';
+      }
+    }
+
+    return false;
   }
 
   buildSurfacePayload(
@@ -425,5 +520,30 @@ export class OdontogramComponent implements OnInit {
       }
     }
     return result;
+  }
+
+  onConfirmReplace(): void {
+    this.isConfirmReplaceModalVisible = false;
+    if (this.pendingConfirmCallback) {
+      this.pendingConfirmCallback();
+      this.pendingConfirmCallback = null;
+    }
+  }
+
+  onCancelReplace(): void {
+    this.isConfirmReplaceModalVisible = false;
+    this.pendingConfirmCallback = null;
+  }
+
+  private applyPayloadToDraftStateAfterConfirm(): void {
+    try {
+      this.applyPayloadToDraftState(this.lastTreatmentPayload);
+      this.isSurfaceModalVisible = false;
+      this.selectedTreatment = null;
+      this.surfaceValidationMessage = null;
+      this.clearSelection();
+    } catch (error) {
+      console.error('Failed to apply surface treatments after confirmation:', error);
+    }
   }
 }

@@ -126,7 +126,11 @@ export class OdontogramService {
     const isSurface = this.isSurfaceTreatmentType(payload.treatment);
 
     if (isSurface) {
-      const validation = this.validateSurfaceTreatment(existing, payload.treatment, payload.surfaces);
+      const validation = this.validateSurfaceTreatment(
+        existing,
+        payload.treatment,
+        payload.surfaces,
+      );
       if (!validation.valid) {
         throw new Error(validation.error);
       }
@@ -167,7 +171,10 @@ export class OdontogramService {
     const serialized = this.serializeOdontogramState(draftState);
     const path = FIREBASE_PATHS.odontogramTreatments(userId, patientId);
 
-    await this.firebaseService.writeData(path, Object.keys(serialized).length > 0 ? serialized : null);
+    await this.firebaseService.writeData(
+      path,
+      Object.keys(serialized).length > 0 ? serialized : null,
+    );
   }
 
   async loadPersistedOdontogram(patientId: string): Promise<OdontogramState> {
@@ -238,7 +245,8 @@ export class OdontogramService {
       }
 
       const groupedSurfaceTreatments: Record<string, Set<ToothSurface>> = {};
-      const records: Array<{ type: TreatmentType; surfaces: ToothSurface[]; timestamp: string }> = [];
+      const records: Array<{ type: TreatmentType; surfaces: ToothSurface[]; timestamp: string }> =
+        [];
 
       for (const treatment of treatments) {
         if (treatment.surface) {

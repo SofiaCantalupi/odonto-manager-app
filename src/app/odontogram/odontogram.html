@@ -27,30 +27,67 @@
             (click)="selectTooth(toothId)"
           >
             <!-- Tooth Number -->
-            <span class="tooth-number text-xs font-medium text-gray-600 mb-1">
-              {{ toothId }}
-            </span>
-            @if (getToothTag(toothId); as toothTag) {
-              <svg
-                class="w-8 h-4 mb-1"
-                viewBox="0 0 32 16"
-                role="img"
-                [attr.aria-label]="getToothTagLabel(toothId)"
-              >
-                <text
-                  x="16"
-                  y="12"
-                  text-anchor="middle"
-                  font-size="10"
-                  font-weight="700"
-                  fill="#000000"
+            @if (isUpperArchTooth(toothId)) {
+              <!-- Upper Arch: Tag above tooth ID, then tooth SVG -->
+              @if (getToothTag(toothId); as toothTag) {
+                <svg
+                  class="w-8 h-4 mb-1"
+                  viewBox="0 0 32 16"
+                  role="img"
+                  [attr.aria-label]="getToothTagLabel(toothId)"
                 >
-                  {{ toothTag }}
-                </text>
-              </svg>
+                  <g>
+                    <rect x="6" y="2" width="20" height="14" rx="2" fill="#000000" />
+
+                    <text
+                      x="16"
+                      y="12"
+                      text-anchor="middle"
+                      font-size="10"
+                      font-weight="700"
+                      fill="#ffffff"
+                    >
+                      {{ toothTag }}
+                    </text>
+                  </g>
+                </svg>
+              }
+              <span class="tooth-number text-xs font-medium text-gray-600">
+                {{ toothId }}
+              </span>
+              <!-- Tooth Component - Purely Presentational -->
+              <app-tooth [toothNumber]="toothId" [data]="getToothData(toothId)"></app-tooth>
+            } @else {
+              <!-- Lower Arch: Tooth SVG on top, then tooth ID, then tag -->
+              <!-- Tooth Component - Purely Presentational -->
+              <app-tooth [toothNumber]="toothId" [data]="getToothData(toothId)"></app-tooth>
+              <span class="tooth-number text-xs font-medium text-gray-600 mt-1">
+                {{ toothId }}
+              </span>
+              @if (getToothTag(toothId); as toothTag) {
+                <svg
+                  class="w-8 h-4 mt-1"
+                  viewBox="0 0 32 16"
+                  role="img"
+                  [attr.aria-label]="getToothTagLabel(toothId)"
+                >
+                  <g>
+                    <rect x="6" y="2" width="20" height="14" rx="2" fill="#000000" />
+
+                    <text
+                      x="16"
+                      y="12"
+                      text-anchor="middle"
+                      font-size="10"
+                      font-weight="700"
+                      fill="#ffffff"
+                    >
+                      {{ toothTag }}
+                    </text>
+                  </g>
+                </svg>
+              }
             }
-            <!-- Tooth Component - Purely Presentational -->
-            <app-tooth [toothNumber]="toothId" [data]="getToothData(toothId)"></app-tooth>
           </div>
 
           <!-- Midline Separator (between 11 and 21) -->
@@ -93,16 +130,20 @@
                 role="img"
                 [attr.aria-label]="getToothTagLabel(toothId)"
               >
-                <text
-                  x="16"
-                  y="12"
-                  text-anchor="middle"
-                  font-size="10"
-                  font-weight="700"
-                  fill="#000000"
-                >
-                  {{ toothTag }}
-                </text>
+                <g>
+                  <rect x="6" y="2" width="20" height="14" rx="2" fill="#000000" />
+
+                  <text
+                    x="16"
+                    y="12"
+                    text-anchor="middle"
+                    font-size="10"
+                    font-weight="700"
+                    fill="#ffffff"
+                  >
+                    {{ toothTag }}
+                  </text>
+                </g>
               </svg>
             }
           </div>
@@ -232,13 +273,24 @@
   <ng-container *nzModalContent>
     <nz-radio-group [(ngModel)]="selectedTreatment" class="flex flex-col gap-3">
       @for (option of treatmentOptions; track option.value) {
-        <label nz-radio [nzValue]="option.value" class="block py-1">
+        <label
+          nz-radio
+          [nzValue]="option.value"
+          [nzDisabled]="isTreatmentOptionDisabled(option.value)"
+          class="block py-1"
+        >
           {{ option.label }}
         </label>
       } @empty {
         <p class="text-gray-500 italic">No options available.</p>
       }
     </nz-radio-group>
+    @if (
+      selectedTreatment && getTreatmentOptionDisabledReason(selectedTreatment);
+      as disabledReason
+    ) {
+      <p class="mt-3 text-xs text-amber-600">{{ disabledReason }}</p>
+    }
   </ng-container>
 </nz-modal>
 
@@ -368,6 +420,9 @@
                 </label>
               }
             </div>
+            @if (surfaceValidationMessage) {
+              <p class="mt-3 text-xs text-amber-600">{{ surfaceValidationMessage }}</p>
+            }
           </div>
         </div>
       </div>
@@ -397,5 +452,21 @@
         </div>
       }
     </div>
+  </ng-container>
+</nz-modal>
+
+<nz-modal
+  [(nzVisible)]="isConfirmReplaceModalVisible"
+  nzTitle="Confirm Action"
+  nzOkText="Continue"
+  nzCancelText="Cancel"
+  (nzOnOk)="onConfirmReplace()"
+  (nzOnCancel)="onCancelReplace()"
+>
+  <ng-container *nzModalContent>
+    <p class="text-sm text-gray-700">
+      Some selected surfaces already have a filling. Applying caries will replace those surface
+      treatments. Continue?
+    </p>
   </ng-container>
 </nz-modal>
