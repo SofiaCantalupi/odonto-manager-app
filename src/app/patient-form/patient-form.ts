@@ -129,7 +129,7 @@ export class PatientFormComponent implements OnInit, OnDestroy {
           Validators.required,
           Validators.pattern(/^\+?[\d\s-]{10,}$/),
         ]),
-        isOrthodontic: this.fb.nonNullable.control(false, [Validators.required]),
+        isOrthodontic: this.fb.nonNullable.control(false),
       }),
       insuranceInfo: this.fb.group({
         hasInsurance: this.fb.nonNullable.control(false),
