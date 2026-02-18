@@ -511,6 +511,14 @@ export class OdontogramComponent implements OnInit {
     return count === 1 ? '1 tooth selected' : `${count} teeth selected`;
   }
 
+  hasSelectedToothWithTreatments(): boolean {
+    return this.getSelectedToothIds().some((toothId) => this.hasAnyTreatments(toothId));
+  }
+
+  hasAnyTreatments(toothId: number): boolean {
+    return this.getToothCondition(toothId).length > 0;
+  }
+
   private cloneState(state: OdontogramState): OdontogramState {
     const result: OdontogramState = {};
     for (const [toothKey, treatments] of Object.entries(state)) {
@@ -545,5 +553,62 @@ export class OdontogramComponent implements OnInit {
     } catch (error) {
       console.error('Failed to apply surface treatments after confirmation:', error);
     }
+  }
+
+  clearSelectedTeeth(): void {
+    const selectedToothIds = this.getSelectedToothIds();
+    if (selectedToothIds.length === 0) {
+      return;
+    }
+
+    let nextState = this.cloneState(this.localOdontogramState());
+
+    for (const toothId of selectedToothIds) {
+      nextState[toothId] = [];
+      this.dataChange.emit({
+        toothNumber: toothId,
+        treatments: [],
+        action: 'remove',
+      });
+    }
+
+    this.localOdontogramState.set(nextState);
+    this.selectionService.setTemporaryState(nextState);
+    this.isTreatmentModalVisible = false;
+    this.selectedTreatment = null;
+    this.clearSelection();
+  }
+
+  removeSurfaceFromTooth(toothId: number, surface: ToothSurface): void {
+    let nextState = this.cloneState(this.localOdontogramState());
+    const treatments = nextState[toothId] || [];
+
+    nextState[toothId] = treatments.filter((t) => !(t.surface === surface));
+
+    this.localOdontogramState.set(nextState);
+    this.selectionService.setTemporaryState(nextState);
+    this.surfaceValidationMessage = null;
+
+    this.dataChange.emit({
+      toothNumber: toothId,
+      treatments: nextState[toothId] ?? [],
+      action: 'update',
+    });
+  }
+
+  getExistingSurfaceTreatments(toothId: number): Array<{ surface: ToothSurface; type: TreatmentType }> {
+    const treatments = this.getToothCondition(toothId);
+    return treatments
+      .filter((t) => t.surface)
+      .map((t) => ({
+        surface: t.surface as ToothSurface,
+        type: t.type,
+      }));
+  }
+
+  getSurfaceTreatmentLabel(surface: ToothSurface, treatmentType: TreatmentType): string {
+    const surfaceLabel = this.getSurfaceLabel(surface);
+    const treatmentLabel = this.treatmentConfig[treatmentType]?.label || treatmentType;
+    return `${surfaceLabel} - ${treatmentLabel}`;
   }
 }
