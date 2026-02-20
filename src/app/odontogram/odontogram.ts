@@ -60,14 +60,15 @@ export class OdontogramComponent implements OnInit {
 
   readonly treatmentConfig = TREATMENT_CONFIG;
   selectedCount = computed(() => this.selectedTeethSignal().size);
+  selectedTreatment = signal<TreatmentType | null>(null);
   selectedTreatmentColor = computed(() => {
-    return this.selectedTreatment
-      ? (TREATMENT_CONFIG[this.selectedTreatment]?.color ?? '#f3f4f6')
+    const treatment = this.selectedTreatment();
+    return treatment
+      ? (TREATMENT_CONFIG[treatment]?.color ?? '#f3f4f6')
       : '#f3f4f6';
   });
 
   isTreatmentModalVisible = false;
-  selectedTreatment: TreatmentType | null = null;
   readonly treatmentOptions = Object.entries(TREATMENT_CONFIG).map(([key, config]) => ({
     value: key as TreatmentType,
     label: config.label,
@@ -260,7 +261,7 @@ export class OdontogramComponent implements OnInit {
     if (this.readonly()) {
       return;
     }
-    this.selectedTreatment = null;
+    this.selectedTreatment.set(null);
     this.isTreatmentModalVisible = true;
   }
 
@@ -269,16 +270,16 @@ export class OdontogramComponent implements OnInit {
   }
 
   confirmTreatment(): void {
-    if (!this.selectedTreatment) {
+    const treatment = this.selectedTreatment();
+    if (!treatment) {
       return;
     }
 
-    if (this.isTreatmentOptionDisabled(this.selectedTreatment)) {
+    if (this.isTreatmentOptionDisabled(treatment)) {
       return;
     }
 
     const capturedSelectedTeeth = this.getSelectedToothIds();
-    const treatment = this.selectedTreatment;
 
     this.isTreatmentModalVisible = false;
 
@@ -292,7 +293,7 @@ export class OdontogramComponent implements OnInit {
 
     try {
       this.applyPayloadToDraftState(this.lastTreatmentPayload);
-      this.selectedTreatment = null;
+      this.selectedTreatment.set(null);
       this.clearSelection();
     } catch (error) {
       console.error('Failed to update odontogram draft:', error);
@@ -314,13 +315,13 @@ export class OdontogramComponent implements OnInit {
   }
 
   confirmSurfaceSelection(): void {
-    if (!this.selectedTreatment) {
+    const treatment = this.selectedTreatment();
+    if (!treatment) {
       return;
     }
 
     const capturedSelectedTeeth = this.getSelectedToothIds();
     const capturedSurfaceSelections = { ...this.surfaceSelections };
-    const treatment = this.selectedTreatment;
 
     this.lastTreatmentPayload = capturedSelectedTeeth.map((toothId) => ({
       toothId,
@@ -337,7 +338,7 @@ export class OdontogramComponent implements OnInit {
     try {
       this.applyPayloadToDraftState(this.lastTreatmentPayload);
       this.isSurfaceModalVisible = false;
-      this.selectedTreatment = null;
+      this.selectedTreatment.set(null);
       this.surfaceValidationMessage = null;
       this.clearSelection();
     } catch (error) {
@@ -489,7 +490,7 @@ export class OdontogramComponent implements OnInit {
   }
 
   private hasAnySelectedSurfaceConflict(): boolean {
-    if (this.selectedTreatment !== 'caries') {
+    if (this.selectedTreatment() !== 'caries') {
       return false;
     }
 
@@ -502,7 +503,7 @@ export class OdontogramComponent implements OnInit {
   }
 
   private isSurfaceConflict(toothId: number, surface: ToothSurface): boolean {
-    if (this.selectedTreatment !== 'caries') {
+    if (this.selectedTreatment() !== 'caries') {
       return false;
     }
 
@@ -590,7 +591,7 @@ export class OdontogramComponent implements OnInit {
     try {
       this.applyPayloadToDraftState(this.lastTreatmentPayload);
       this.isSurfaceModalVisible = false;
-      this.selectedTreatment = null;
+      this.selectedTreatment.set(null);
       this.surfaceValidationMessage = null;
       this.clearSelection();
     } catch (error) {
@@ -618,7 +619,7 @@ export class OdontogramComponent implements OnInit {
     this.localOdontogramState.set(nextState);
     this.selectionService.setTemporaryState(nextState);
     this.isTreatmentModalVisible = false;
-    this.selectedTreatment = null;
+    this.selectedTreatment.set(null);
     this.clearSelection();
   }
 
