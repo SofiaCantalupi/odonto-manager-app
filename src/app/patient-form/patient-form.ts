@@ -50,6 +50,8 @@ interface InsuranceInfo {
   hasInsurance: boolean;
   insuranceName: string;
   affiliateNumber: string;
+  plan: string;
+  taxStatus: 'taxed' | 'exempt';
 }
 
 interface DentalRecord {
@@ -80,6 +82,8 @@ interface PatientFormType {
     hasInsurance: import('@angular/forms').FormControl<boolean>;
     insuranceName: import('@angular/forms').FormControl<string>;
     affiliateNumber: import('@angular/forms').FormControl<string>;
+    plan: import('@angular/forms').FormControl<string>;
+    taxStatus: import('@angular/forms').FormControl<'taxed' | 'exempt'>;
   }>;
   dentalRecord: FormGroup<{
     pathologies: import('@angular/forms').FormControl<string>;
@@ -139,6 +143,8 @@ export class PatientFormComponent implements OnInit, OnDestroy {
         hasInsurance: this.fb.nonNullable.control(false),
         insuranceName: this.fb.nonNullable.control(''),
         affiliateNumber: this.fb.nonNullable.control(''),
+        plan: this.fb.nonNullable.control(''),
+        taxStatus: this.fb.nonNullable.control<'taxed' | 'exempt'>('taxed'),
       }),
       dentalRecord: this.fb.group({
         pathologies: this.fb.nonNullable.control(''),
