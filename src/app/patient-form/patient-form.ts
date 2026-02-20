@@ -14,6 +14,7 @@ import { Router } from '@angular/router';
 import { OdontogramComponent } from '../odontogram/odontogram';
 import { OdontogramState } from '../odontogram/dental-types';
 import { OdontogramService } from '../odontogram/odontogram.service';
+import { PatientService } from '../services/patient.service';
 import { Location } from '@angular/common';
 
 // Custom validator to prevent future dates
@@ -104,7 +105,8 @@ export class PatientFormComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private router: Router,
     private odontogramService: OdontogramService,
-    private Location: Location
+    private patientService: PatientService,
+    private location: Location,
   ) {}
 
   ngOnInit(): void {
@@ -225,19 +227,31 @@ export class PatientFormComponent implements OnInit, OnDestroy {
   async onSave(): Promise<void> {
     if (this.patientForm.valid) {
       const formValue = this.patientForm.getRawValue();
-      const patientId = this.buildPatientId(formValue.personalData.idCard);
 
       try {
+        // Step 1: Save patient data and get the generated ID
+        const patientData: Patient = {
+          personalData: formValue.personalData,
+          insuranceInfo: formValue.insuranceInfo,
+          dentalRecord: formValue.dentalRecord,
+        };
+
+        const patientId = await this.patientService.createPatient(patientData);
+        console.log('Patient created with ID:', patientId);
+
+        // Step 2: Save odontogram data using the patient ID
         await this.odontogramService.persistOdontogram(patientId);
+        console.log('Odontogram saved successfully');
+
+        // Step 3: Navigate to patient detail view
+        alert('Patient and odontogram saved successfully.');
+        this.resetForm();
+        this.router.navigate(['/patients', patientId]);
       } catch (error) {
-        console.error('Failed to persist odontogram draft:', error);
-        alert('Could not save odontogram. Please try again.');
+        console.error('Failed to save patient:', error);
+        alert('Could not save patient. Please try again.');
         return;
       }
-
-      console.log('Patient Form Value:', formValue);
-      alert('Patient and odontogram saved successfully.');
-      this.resetForm();
     } else {
       this.markAllAsTouched();
       console.log('Form is invalid', this.patientForm.errors);
@@ -263,11 +277,7 @@ export class PatientFormComponent implements OnInit, OnDestroy {
   }
 
   onCancel(): void {
-    this.Location.back();
-  }
-
-  private buildPatientId(idCard: string): string {
-    const normalizedId = (idCard || 'patient').trim().replace(/\s+/g, '-').toLowerCase();
-    return `${normalizedId}-${Date.now()}`;
+    this.odontogramService.clearTemporaryState();
+    this.location.back();
   }
 }

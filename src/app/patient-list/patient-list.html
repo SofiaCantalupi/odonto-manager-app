@@ -22,7 +22,9 @@
         Back
       </button>
       @if (isComponentReady) {
-        <button (click)="onCreateNewPatient()" nz-button nzType="primary">Create New Patient</button>
+        <button (click)="onCreateNewPatient()" nz-button nzType="primary">
+          Create New Patient
+        </button>
       }
     </div>
 
@@ -30,7 +32,7 @@
     <div class="bg-white rounded-lg shadow-md p-6 mb-6">
       <h2 class="text-lg font-semibold text-gray-800 mb-4">Filters</h2>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Name Filter -->
         <div>
           <label for="nameFilter" class="block text-sm font-medium text-gray-700 mb-1">
@@ -46,33 +48,18 @@
           />
         </div>
 
-        <!-- ID Card Filter -->
+        <!-- ID Filter -->
         <div>
-          <label for="idCardFilter" class="block text-sm font-medium text-gray-700 mb-1">
-            ID Card (DNI)
+          <label for="idFilter" class="block text-sm font-medium text-gray-700 mb-1">
+            Patient ID or DNI
           </label>
           <input
             type="text"
-            id="idCardFilter"
-            [(ngModel)]="filters.idCard"
+            id="idFilter"
+            [(ngModel)]="filters.id"
             (ngModelChange)="applyFilters()"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            placeholder="Exact match..."
-          />
-        </div>
-
-        <!-- Affiliate Number Filter -->
-        <div>
-          <label for="affiliateFilter" class="block text-sm font-medium text-gray-700 mb-1">
-            Affiliate Number
-          </label>
-          <input
-            type="text"
-            id="affiliateFilter"
-            [(ngModel)]="filters.affiliateNumber"
-            (ngModelChange)="applyFilters()"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            placeholder="Exact match..."
+            placeholder="Search by generated ID or DNI..."
           />
         </div>
       </div>

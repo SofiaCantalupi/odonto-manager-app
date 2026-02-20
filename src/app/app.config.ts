@@ -16,6 +16,7 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { provideHttpClient } from '@angular/common/http';
 import { FirebaseService } from './services/firebase.service';
 import { OdontogramService } from './odontogram/odontogram.service';
+import { PatientService } from './services/patient.service';
 
 registerLocaleData(es);
 
@@ -32,5 +33,6 @@ export const appConfig: ApplicationConfig = {
     // Services
     FirebaseService,
     OdontogramService,
+    PatientService,
   ],
 };

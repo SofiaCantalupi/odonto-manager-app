@@ -29,10 +29,12 @@ export class OdontogramService {
 
   // Draft odontogram state (local-only until persisted)
   private temporaryStateSubject = new BehaviorSubject<OdontogramState>({});
+  private temporaryGeneralNotesSubject = new BehaviorSubject<string>('');
 
   // Observable for template binding
   selectedTeeth$: Observable<Set<number>>;
   temporaryState$: Observable<OdontogramState> = this.temporaryStateSubject.asObservable();
+  temporaryGeneralNotes$: Observable<string> = this.temporaryGeneralNotesSubject.asObservable();
 
   constructor() {
     const initialTeeth = new Set<number>();
@@ -110,6 +112,15 @@ export class OdontogramService {
 
   clearTemporaryState(): void {
     this.temporaryStateSubject.next({});
+    this.temporaryGeneralNotesSubject.next('');
+  }
+
+  setTemporaryGeneralNotes(notes: string): void {
+    this.temporaryGeneralNotesSubject.next(notes?.trim() ?? '');
+  }
+
+  getTemporaryGeneralNotes(): string {
+    return this.temporaryGeneralNotesSubject.value;
   }
 
   applyDraftTreatment(
@@ -168,16 +179,31 @@ export class OdontogramService {
     }
 
     const draftState = this.temporaryStateSubject.value;
+    const generalNotes = this.temporaryGeneralNotesSubject.value;
     const serialized = this.serializeOdontogramState(draftState);
     const path = FIREBASE_PATHS.odontogramTreatments(userId, patientId);
+    const payload = {
+      teeth: serialized,
+      generalNotes,
+      updatedAt: new Date().toISOString(),
+    };
 
-    await this.firebaseService.writeData(
-      path,
-      Object.keys(serialized).length > 0 ? serialized : null,
-    );
+    if (Object.keys(serialized).length === 0 && !generalNotes) {
+      await this.firebaseService.writeData(path, null);
+      return;
+    }
+
+    await this.firebaseService.writeData(path, payload);
   }
 
   async loadPersistedOdontogram(patientId: string): Promise<OdontogramState> {
+    const persisted = await this.loadPersistedOdontogramData(patientId);
+    return persisted.state;
+  }
+
+  async loadPersistedOdontogramData(
+    patientId: string,
+  ): Promise<{ state: OdontogramState; generalNotes: string }> {
     const userId = this.firebaseService.getCurrentUserId();
     if (!userId) {
       throw new Error('Cannot load odontogram: User not authenticated');
@@ -185,7 +211,7 @@ export class OdontogramService {
 
     const path = FIREBASE_PATHS.odontogramTreatments(userId, patientId);
     const data = await this.firebaseService.readData(path);
-    return this.normalizeTreatmentsNode(data);
+    return this.normalizePersistedOdontogram(data);
   }
 
   async initializeDraftForPatient(patientId?: string): Promise<void> {
@@ -194,8 +220,32 @@ export class OdontogramService {
       return;
     }
 
-    const persisted = await this.loadPersistedOdontogram(patientId);
-    this.setTemporaryState(persisted);
+    const persistedData = await this.loadPersistedOdontogramData(patientId);
+    this.setTemporaryState(persistedData.state);
+    this.setTemporaryGeneralNotes(persistedData.generalNotes);
+  }
+
+  private normalizePersistedOdontogram(data: unknown): {
+    state: OdontogramState;
+    generalNotes: string;
+  } {
+    if (!data || typeof data !== 'object') {
+      return { state: {}, generalNotes: '' };
+    }
+
+    const record = data as { teeth?: unknown; generalNotes?: unknown };
+
+    if ('teeth' in record) {
+      return {
+        state: this.normalizeTreatmentsNode(record.teeth),
+        generalNotes: typeof record.generalNotes === 'string' ? record.generalNotes : '',
+      };
+    }
+
+    return {
+      state: this.normalizeTreatmentsNode(data),
+      generalNotes: '',
+    };
   }
 
   private validateSurfaceTreatment(

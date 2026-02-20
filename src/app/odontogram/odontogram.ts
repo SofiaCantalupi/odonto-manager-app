@@ -50,6 +50,7 @@ export class OdontogramComponent implements OnInit {
   }
 
   data = input<OdontogramState>({});
+  generalNotes = input<string>('');
   patientId = input<string | null>(null);
   readonly = input<boolean>(false);
   dataChange = output<OdontogramChangeEvent>();
@@ -79,6 +80,7 @@ export class OdontogramComponent implements OnInit {
 
   isConfirmReplaceModalVisible = false;
   private pendingConfirmCallback: (() => void) | null = null;
+  generalNotesText = signal<string>('');
 
   readonly upperArch: number[] = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
   readonly lowerArch: number[] = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
@@ -90,22 +92,47 @@ export class OdontogramComponent implements OnInit {
   private async initializeDraftState(): Promise<void> {
     const targetPatientId = this.patientId();
 
+    // If readonly mode, just use the input data without initializing draft
+    if (this.readonly()) {
+      const inputState = this.data() ?? {};
+      const localState = this.cloneState(inputState);
+      this.localOdontogramState.set(localState);
+      this.generalNotesText.set(this.generalNotes() ?? '');
+      return;
+    }
+
     try {
       if (targetPatientId) {
         await this.selectionService.initializeDraftForPatient(targetPatientId);
         this.localOdontogramState.set(this.selectionService.getTemporaryState());
+        this.generalNotesText.set(this.selectionService.getTemporaryGeneralNotes());
       } else {
         const inputState = this.data() ?? {};
         const localState = this.cloneState(inputState);
         this.localOdontogramState.set(localState);
         this.selectionService.setTemporaryState(localState);
+        const initialNotes = this.generalNotes() ?? '';
+        this.generalNotesText.set(initialNotes);
+        this.selectionService.setTemporaryGeneralNotes(initialNotes);
       }
     } catch (error) {
       console.error('Failed to initialize odontogram draft state:', error);
       const fallback = this.cloneState(this.data() ?? {});
       this.localOdontogramState.set(fallback);
       this.selectionService.setTemporaryState(fallback);
+      this.generalNotesText.set(this.generalNotes() ?? '');
     }
+  }
+
+  onGeneralNotesChange(value: string): void {
+    const notes = value ?? '';
+    this.generalNotesText.set(notes);
+
+    if (this.readonly()) {
+      return;
+    }
+
+    this.selectionService.setTemporaryGeneralNotes(notes);
   }
 
   getTreatmentsForTooth(toothId: number): ToothTreatment[] {
@@ -207,6 +234,9 @@ export class OdontogramComponent implements OnInit {
   }
 
   selectTooth(toothId: number): void {
+    if (this.readonly()) {
+      return;
+    }
     this.selectionService.toggleToothSelection(toothId);
   }
 
@@ -215,10 +245,16 @@ export class OdontogramComponent implements OnInit {
   }
 
   clearSelection(): void {
+    if (this.readonly()) {
+      return;
+    }
     this.selectionService.clearSelection();
   }
 
   openTreatmentModal(): void {
+    if (this.readonly()) {
+      return;
+    }
     this.selectedTreatment = null;
     this.isTreatmentModalVisible = true;
   }
@@ -454,7 +490,9 @@ export class OdontogramComponent implements OnInit {
 
     return this.getSelectedToothIds().some((toothId) => {
       const selectedSurfaces = this.surfaceSelections[toothId] ?? new Set<ToothSurface>();
-      return Array.from(selectedSurfaces).some((surface) => this.isSurfaceConflict(toothId, surface));
+      return Array.from(selectedSurfaces).some((surface) =>
+        this.isSurfaceConflict(toothId, surface),
+      );
     });
   }
 
@@ -596,7 +634,9 @@ export class OdontogramComponent implements OnInit {
     });
   }
 
-  getExistingSurfaceTreatments(toothId: number): Array<{ surface: ToothSurface; type: TreatmentType }> {
+  getExistingSurfaceTreatments(
+    toothId: number,
+  ): Array<{ surface: ToothSurface; type: TreatmentType }> {
     const treatments = this.getToothCondition(toothId);
     return treatments
       .filter((t) => t.surface)
