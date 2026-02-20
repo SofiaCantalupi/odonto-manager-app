@@ -77,17 +77,17 @@ export const TREATMENT_CONFIG: Record<TreatmentType, TreatmentConfig> = {
   caries: {
     label: 'Caries',
     scope: 'surface',
-    color: '#ef4444', // Red-500
-    bgClass: 'bg-red-500',
-    strokeClass: 'stroke-red-500',
+    color: '#3b82f6', // Blue-500
+    bgClass: 'bg-blue-500',
+    strokeClass: 'stroke-blue-500',
     symbol: 'none',
   },
   filling: {
     label: 'Filling',
     scope: 'surface',
-    color: '#3b82f6', // Blue-500
-    bgClass: 'bg-blue-500',
-    strokeClass: 'stroke-blue-500',
+    color: '#ef4444', // Red-500
+    bgClass: 'bg-red-500',
+    strokeClass: 'stroke-red-500',
     symbol: 'none',
   },
   crown: {

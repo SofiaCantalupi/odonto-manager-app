@@ -60,6 +60,11 @@ export class OdontogramComponent implements OnInit {
 
   readonly treatmentConfig = TREATMENT_CONFIG;
   selectedCount = computed(() => this.selectedTeethSignal().size);
+  selectedTreatmentColor = computed(() => {
+    return this.selectedTreatment
+      ? (TREATMENT_CONFIG[this.selectedTreatment]?.color ?? '#f3f4f6')
+      : '#f3f4f6';
+  });
 
   isTreatmentModalVisible = false;
   selectedTreatment: TreatmentType | null = null;
@@ -650,5 +655,14 @@ export class OdontogramComponent implements OnInit {
     const surfaceLabel = this.getSurfaceLabel(surface);
     const treatmentLabel = this.treatmentConfig[treatmentType]?.label || treatmentType;
     return `${surfaceLabel} - ${treatmentLabel}`;
+  }
+
+  hexToRgb(hex: string): string {
+    // Remove '#' if present
+    const cleanHex = hex.replace('#', '');
+    const r = parseInt(cleanHex.substring(0, 2), 16);
+    const g = parseInt(cleanHex.substring(2, 4), 16);
+    const b = parseInt(cleanHex.substring(4, 6), 16);
+    return `${r}, ${g}, ${b}`;
   }
 }

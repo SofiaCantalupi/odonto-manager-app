@@ -22,16 +22,16 @@
   stroke: #6b7280; /* Gray-500 */
 }
 
-/* Caries - Red fill */
+/* Caries - Blue fill */
 .zone-caries {
-  fill: #ef4444; /* Red-500 */
-  stroke: #b91c1c; /* Red-700 */
-}
-
-/* Filling - Blue fill */
-.zone-filling {
   fill: #3b82f6; /* Blue-500 */
   stroke: #1d4ed8; /* Blue-700 */
+}
+
+/* Filling - Red fill */
+.zone-filling {
+  fill: #ef4444; /* Red-500 */
+  stroke: #b91c1c; /* Red-700 */
 }
 
 /* Crown - Gold/Yellow fill */
