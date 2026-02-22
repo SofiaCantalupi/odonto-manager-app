@@ -4,7 +4,7 @@ import {
   TreatmentType,
   isWholeToothTreatment,
   getTreatmentColor,
-} from '../odontogram/dental-types';
+} from '../models/dental-types';
 
 // Zone identifier type
 export type ToothZone = 'center' | 'top' | 'bottom' | 'left' | 'right';

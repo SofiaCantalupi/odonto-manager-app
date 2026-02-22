@@ -20,7 +20,7 @@ import {
   TREATMENT_CONFIG,
   TreatmentType,
   treatmentToCondition,
-} from './dental-types';
+} from '../models/dental-types';
 import { OdontogramService } from './odontogram.service';
 
 @Component({

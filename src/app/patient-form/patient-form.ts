@@ -12,7 +12,7 @@ import {
 import { Subject, takeUntil } from 'rxjs';
 import { Router } from '@angular/router';
 import { OdontogramComponent } from '../odontogram/odontogram';
-import { OdontogramState } from '../odontogram/dental-types';
+import { OdontogramState } from '../models/dental-types';
 import { OdontogramService } from '../odontogram/odontogram.service';
 import { PatientService } from '../services/patient.service';
 import { Location } from '@angular/common';

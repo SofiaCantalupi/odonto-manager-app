@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { OdontogramComponent } from './odontogram';
-import { OdontogramState } from './dental-types';
+import { OdontogramState } from '../models/dental-types';
 
 describe('OdontogramComponent', () => {
   let component: OdontogramComponent;

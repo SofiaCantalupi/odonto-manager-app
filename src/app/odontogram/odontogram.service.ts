@@ -11,7 +11,7 @@ import {
   SurfaceTreatment,
   ToothSurface,
   TreatmentType,
-} from './dental-types';
+} from '../models/dental-types';
 
 /**
  * OdontogramService - Manages tooth selection state and persistence
