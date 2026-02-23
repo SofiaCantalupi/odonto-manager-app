@@ -143,8 +143,18 @@ export class FirebaseService {
         return snapshot.val();
       }
       return null;
-    } catch (error) {
-      console.error('Error reading data:', error);
+    } catch (error: any) {
+      if (error?.message?.includes('Permission denied')) {
+        console.error(
+          '❌ Firebase Permission Denied for path: ' +
+            path +
+            '\n' +
+            'Please update your Firebase Realtime Database security rules.\n' +
+            'See FIREBASE_SETUP.md for detailed instructions.',
+        );
+      } else {
+        console.error('Error reading data:', error);
+      }
       throw error;
     }
   }

@@ -31,9 +31,23 @@ export class ProcedureService {
     try {
       const data = await this.firebaseService.readData(this.PROCEDURES_PATH);
       return this.normalizeProcedures(data);
-    } catch (error) {
-      console.warn('Failed to load procedures from Firebase:', error);
-      return []; // Return empty array on error (e.g., not initialized, no auth, etc.)
+    } catch (error: any) {
+      if (error?.message?.includes('Permission denied')) {
+        console.error(
+          '❌ Firebase Permission Denied: Please update your Firebase Realtime Database rules.\n' +
+            'See FIREBASE_SETUP.md for instructions.\n' +
+            'Quick fix: Go to Firebase Console → Realtime Database → Rules tab and use:\n' +
+            '{\n' +
+            '  "rules": {\n' +
+            '    ".read": "auth != null",\n' +
+            '    ".write": "auth != null"\n' +
+            '  }\n' +
+            '}',
+        );
+      } else {
+        console.warn('Failed to load procedures from Firebase:', error);
+      }
+      return []; // Return empty array on error
     }
   }
 

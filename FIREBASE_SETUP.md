@@ -27,19 +27,16 @@ The application now uses Firebase Realtime Database instead of localStorage for 
 1. In Firebase Console, go to **Build** → **Realtime Database**
 2. Click **Create Database**
 3. Start in **test mode** (for development)
-   - Rules:
+   - Test mode rules (valid for 30 days):
    ```json
    {
      "rules": {
-       "users": {
-         "$uid": {
-           ".read": "auth.uid === $uid",
-           ".write": "auth.uid === $uid"
-         }
-       }
+       ".read": "auth != null",
+       ".write": "auth != null"
      }
    }
    ```
+   > These rules allow any authenticated user to read/write. Update them based on your needs!
 4. Choose a database region closest to you
 5. Click **Enable**
 
@@ -86,9 +83,11 @@ export const firebaseConfig = {
   storageBucket: 'YOUR_STORAGE_BUCKET',
   messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
   appId: 'YOUR_APP_ID',
-  databaseURL: 'YOUR_DATABASE_URL',
+  databaseURL: 'YOUR_DATABASE_URL', // IMPORTANT: Must include database URL
 };
 ```
+
+> ⚠️ **IMPORTANT**: Make sure to include the `databaseURL` field. It should look like: `https://your-project-default-rtdb.firebaseio.com`
 
 #### File: `src/environments/firebase.environment.ts` (optional, for production)
 
@@ -123,6 +122,17 @@ export const firebaseEnvironment = {
 /users
   /{userId}
     /selectedTeeth: [11, 12, 13, ...] // Array of selected tooth IDs
+/patients
+  /{patientId}
+    /personalInfo: {...}
+    /insuranceInfo: {...}
+    /dentalRecord: {...}
+/procedures
+  /{procedureId}
+    /name: "Dental Cleaning"
+    /category: "general"
+    /basePrice: 150.00
+    /description: "..."
 ```
 
 ### Data Flow
@@ -170,6 +180,21 @@ selectedCount = computed(() => this.selectionService.getSelectedCount());
 
 ### Development (Testing)
 
+Use these permissive rules for development. Update them before deploying to production!
+
+```json
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null"
+  }
+}
+```
+
+### Production (Recommended)
+
+Use these more restrictive rules for production:
+
 ```json
 {
   "rules": {
@@ -178,25 +203,27 @@ selectedCount = computed(() => this.selectionService.getSelectedCount());
         ".read": "auth.uid === $uid",
         ".write": "auth.uid === $uid"
       }
+    },
+    "patients": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "procedures": {
+      ".read": "auth != null",
+      ".write": "auth != null"
     }
   }
 }
 ```
 
-### Production (Recommended)
+### How to Update Rules
 
-```json
-{
-  "rules": {
-    "users": {
-      "$uid": {
-        ".read": "auth.uid === $uid",
-        ".write": "auth.uid === $uid && auth.provider === 'anonymous'"
-      }
-    }
-  }
-}
-```
+1. Go to Firebase Console → **Realtime Database**
+2. Click on the **Rules** tab
+3. Copy and paste the appropriate rules above
+4. Click **Publish**
+
+> ⚠️ **WARNING**: The development rules are very permissive. Anyone authenticated can read/write all data. Update to production rules before deploying!
 
 ## Troubleshooting
 
@@ -210,7 +237,21 @@ selectedCount = computed(() => this.selectionService.getSelectedCount());
 
 ### Issue: "Permission denied" errors in console
 
-- **Solution**: Update Realtime Database rules to allow read/write for authenticated users
+- **Cause**: Firebase Realtime Database security rules are blocking access
+- **Solution**:
+  1. Go to Firebase Console → **Realtime Database** → **Rules** tab
+  2. For **development**, use these permissive rules:
+     ```json
+     {
+       "rules": {
+         ".read": "auth != null",
+         ".write": "auth != null"
+       }
+     }
+     ```
+  3. Click **Publish**
+  4. Refresh your app
+  5. **Before production**: Update to more restrictive rules (see "Database Security Rules" section above)
 
 ### Issue: Changes not syncing
 

@@ -11,6 +11,7 @@ import {
 import { Subject, takeUntil } from 'rxjs';
 import { NzModalModule } from 'ng-zorro-antd/modal';
 import { NzButtonModule } from 'ng-zorro-antd/button';
+import { NzIconModule } from 'ng-zorro-antd/icon';
 import { ProcedureService } from '../services/procedure.service';
 import {
   Procedure,
@@ -29,7 +30,14 @@ interface ProcedureForm {
 @Component({
   selector: 'app-procedures',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, NzModalModule, NzButtonModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    FormsModule,
+    NzModalModule,
+    NzButtonModule,
+    NzIconModule,
+  ],
   templateUrl: './procedures.html',
   styleUrls: ['./procedures.css'],
 })
@@ -139,10 +147,14 @@ export class ProceduresComponent implements OnInit, OnDestroy {
     const formValue = this.procedureForm.getRawValue();
     const procedureData: ProcedureFormData = {
       name: formValue.name,
-      description: formValue.description || undefined,
       category: formValue.category,
       basePrice: formValue.basePrice,
     };
+
+    // Only include description if it has a value (Firebase doesn't accept undefined)
+    if (formValue.description && formValue.description.trim()) {
+      procedureData.description = formValue.description.trim();
+    }
 
     try {
       if (this.isEditMode && this.editingProcedureId) {
