@@ -1,12 +1,19 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet } from '@angular/router';
-import { LucideAngularModule, Calendar, Users, FileText, Settings, Plus } from 'lucide-angular';
+import {
+  LucideAngularModule,
+  Calendar,
+  Users,
+  FileText,
+  Settings,
+  Plus,
+  ClipboardList,
+} from 'lucide-angular';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { filter } from 'rxjs/operators';
 import { NavigationEnd } from '@angular/router';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
-
 
 interface User {
   name: string;
@@ -35,6 +42,7 @@ export class DashboardComponent {
   readonly FileText = FileText;
   readonly Settings = Settings;
   readonly Plus = Plus;
+  readonly ClipboardList = ClipboardList;
 
   isHomePage = true;
 
@@ -58,6 +66,7 @@ export class DashboardComponent {
   menuItems: MenuItem[] = [
     { label: 'Agenda', icon: Calendar, route: '/agenda', active: true },
     { label: 'Patients', icon: Users, route: '/patients', active: false },
+    { label: 'Procedures', icon: ClipboardList, route: '/procedures', active: false },
     { label: 'Estimates', icon: FileText, route: '/estimates', active: false },
     { label: 'Settings', icon: Settings, route: '/settings', active: false },
   ];
