@@ -9,6 +9,7 @@ import {
   Settings,
   Plus,
   ClipboardList,
+  DollarSign,
 } from 'lucide-angular';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { filter } from 'rxjs/operators';
@@ -43,6 +44,7 @@ export class DashboardComponent {
   readonly Settings = Settings;
   readonly Plus = Plus;
   readonly ClipboardList = ClipboardList;
+  readonly DollarSign = DollarSign;
 
   isHomePage = true;
 
@@ -67,6 +69,7 @@ export class DashboardComponent {
     { label: 'Agenda', icon: Calendar, route: '/agenda', active: true },
     { label: 'Patients', icon: Users, route: '/patients', active: false },
     { label: 'Procedures', icon: ClipboardList, route: '/procedures', active: false },
+    { label: 'Budgets', icon: DollarSign, route: '/budgets', active: false },
     { label: 'Estimates', icon: FileText, route: '/estimates', active: false },
     { label: 'Settings', icon: Settings, route: '/settings', active: false },
   ];

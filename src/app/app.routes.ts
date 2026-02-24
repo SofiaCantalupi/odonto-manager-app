@@ -5,6 +5,8 @@ import { PatientFormComponent } from './patient-form/patient-form';
 import { PatientDetailComponent } from './patient-detail/patient-detail';
 import { DashboardStatsComponent } from './dashboard-stats/dashboard-stats';
 import { ProceduresComponent } from './procedures/procedures';
+import { BudgetListComponent } from './budget/budget-list';
+import { BudgetFormComponent } from './budget/budget-form';
 
 export const routes: Routes = [
   {
@@ -17,6 +19,8 @@ export const routes: Routes = [
       { path: 'patients/new', component: PatientFormComponent },
       { path: 'patients/:id', component: PatientDetailComponent },
       { path: 'procedures', component: ProceduresComponent },
+      { path: 'budgets', component: BudgetListComponent },
+      { path: 'budgets/new', component: BudgetFormComponent },
     ],
   },
 ];

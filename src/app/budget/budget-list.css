@@ -1,0 +1,86 @@
+/* Budget List Styling */
+
+:host {
+  display: block;
+}
+
+/* Table */
+table {
+  border-collapse: collapse;
+}
+
+thead tr {
+  background-color: #f9fafb;
+}
+
+tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+tbody tr:hover {
+  background-color: #f3f4f6;
+}
+
+/* Filters Section */
+.filter-section {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Empty State */
+nz-empty {
+  padding: 48px 24px;
+}
+
+/* Status Tags */
+nz-tag {
+  font-weight: 500;
+}
+
+/* Button Group */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+button[nz-button] {
+  transition: all 0.2s ease;
+}
+
+/* Links in buttons */
+a[nz-button] {
+  text-decoration: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .overflow-x-auto {
+    font-size: 13px;
+  }
+
+  th,
+  td {
+    padding: 12px !important;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .max-w-7xl {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .mb-8 {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  button[nz-button] {
+    width: 100%;
+  }
+}
