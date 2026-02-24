@@ -12,6 +12,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { NzModalModule } from 'ng-zorro-antd/modal';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzIconModule } from 'ng-zorro-antd/icon';
+import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { ProcedureService } from '../services/procedure.service';
 import {
   Procedure,
@@ -37,6 +38,7 @@ interface ProcedureForm {
     NzModalModule,
     NzButtonModule,
     NzIconModule,
+    NzSpinModule,
   ],
   templateUrl: './procedures.html',
   styleUrls: ['./procedures.css'],
@@ -48,6 +50,7 @@ export class ProceduresComponent implements OnInit, OnDestroy {
   isEditMode = false;
   editingProcedureId: string | null = null;
   searchQuery = '';
+  isLoading = false;
 
   procedureForm!: FormGroup<ProcedureForm>;
   private destroy$ = new Subject<void>();
@@ -90,8 +93,13 @@ export class ProceduresComponent implements OnInit, OnDestroy {
   }
 
   private async loadProcedures(): Promise<void> {
-    this.procedures = await this.procedureService.getProcedures();
-    this.filteredProcedures = [...this.procedures];
+    try {
+      this.isLoading = true;
+      this.procedures = await this.procedureService.getProcedures();
+      this.filteredProcedures = [...this.procedures];
+    } finally {
+      this.isLoading = false;
+    }
   }
 
   onSearch(): void {

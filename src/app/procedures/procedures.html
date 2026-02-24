@@ -1,5 +1,11 @@
 <div class="min-h-screen bg-gray-50 px-4 sm:px-6 lg:px-8 py-8">
-  <div class="max-w-7xl mx-auto">
+  <!-- Loading Indicator -->
+  @if (isLoading) {
+    <div class="flex items-center justify-center min-h-screen">
+      <nz-spin [nzSimple]="true" [nzSize]="'large'" nzTip="Loading procedures..."></nz-spin>
+    </div>
+  } @else {
+    <div class="max-w-7xl mx-auto">
     <!-- Header -->
     <div class="mb-8 flex items-center justify-between">
       <div>
@@ -150,7 +156,8 @@
         </div>
       }
     </div>
-  </div>
+    </div>
+  }
 </div>
 
 <!-- Modal -->

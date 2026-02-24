@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { NzButtonModule } from 'ng-zorro-antd/button';
+import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { Location } from '@angular/common';
 import { Subject, takeUntil } from 'rxjs';
 import { PatientListItem, PatientService } from '../services/patient.service';
@@ -15,7 +16,7 @@ interface FilterCriteria {
 
 @Component({
   selector: 'app-patient-list',
-  imports: [CommonModule, FormsModule, NzButtonModule],
+  imports: [CommonModule, FormsModule, NzButtonModule, NzSpinModule],
   templateUrl: './patient-list.html',
   styleUrl: './patient-list.css',
 })
@@ -39,6 +40,7 @@ export class PatientListComponent implements OnInit, OnDestroy {
 
   // Track if component is mounted and ready
   isComponentReady = false;
+  isLoading = true;
 
   constructor(
     private router: Router,
@@ -47,6 +49,7 @@ export class PatientListComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.isLoading = true;
     this.patientService
       .getPatientsStream()
       .pipe(takeUntil(this.destroy$))
@@ -55,12 +58,14 @@ export class PatientListComponent implements OnInit, OnDestroy {
           this.patients = patients;
           this.applyFilters();
           this.isComponentReady = true;
+          this.isLoading = false;
         },
         error: (error) => {
           console.error('Failed to load patients stream:', error);
           this.patients = [];
           this.filteredPatients = [];
           this.isComponentReady = true;
+          this.isLoading = false;
         },
       });
   }
