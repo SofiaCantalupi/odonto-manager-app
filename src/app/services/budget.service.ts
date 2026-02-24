@@ -37,7 +37,6 @@ export class BudgetService {
     };
 
     await this.firebaseService.writeData(path, budget);
-    console.log(`Budget created with ID: ${budgetId}`);
     return budgetId;
   }
 
@@ -72,7 +71,6 @@ export class BudgetService {
     };
 
     await this.firebaseService.writeData(path, updated);
-    console.log(`Budget ${budgetId} updated`);
   }
 
   /**
@@ -82,7 +80,6 @@ export class BudgetService {
   async deleteBudget(budgetId: string): Promise<void> {
     const path = `${this.BUDGETS_PATH}/${budgetId}`;
     await this.firebaseService.deleteData(path);
-    console.log(`Budget ${budgetId} deleted`);
   }
 
   /**

@@ -34,7 +34,6 @@ interface BudgetFormGroup {
   patientId: FormControl<string>;
   financingType: FormControl<'fixed-quotes' | 'open-balance'>;
   numberOfQuotes: FormControl<number | null>;
-  totalAmount: FormControl<number>;
   description: FormControl<string>;
   items: FormArray;
 }
@@ -79,25 +78,33 @@ export class BudgetFormComponent implements OnInit, OnDestroy {
   quotesValidationMessage = signal<string>('');
   errorMessage = signal<string>('');
 
+  // Items tracking
+  private itemsChangeCounter = signal(0);
+
   // Computed values
   quotesTotalAmount = computed(() => {
     const quotesList = this.quotes();
     return quotesList.reduce((sum, quote) => sum + quote.amount, 0);
   });
 
+  calculatedTotalAmount = computed(() => {
+    this.itemsChangeCounter(); // Track items changes
+    const itemsArray = this.budgetForm?.get('items') as FormArray;
+    if (!itemsArray) return 0;
+    return itemsArray.controls.reduce((sum, item) => {
+      return sum + (item.get('subtotal')?.value || 0);
+    }, 0);
+  });
+
   isQuotesValid = computed(() => {
-    const form = this.budgetForm;
-    if (!form) return false;
-    const totalAmount = form.get('totalAmount')?.value || 0;
+    const totalAmount = this.calculatedTotalAmount();
     return this.budgetService.validateQuotesSum(this.quotes(), totalAmount);
   });
 
   showQuotesTable = computed(() => {
     const financingType = this.budgetForm?.get('financingType')?.value;
     const quotesLength = this.quotes().length;
-    const show = financingType === 'fixed-quotes' && quotesLength > 0;
-    console.log('showQuotesTable computed: financingType=', financingType, 'quotesLength=', quotesLength, 'result=', show);
-    return show;
+    return financingType === 'fixed-quotes' && quotesLength > 0;
   });
 
   // Status and financing labels
@@ -132,8 +139,7 @@ export class BudgetFormComponent implements OnInit, OnDestroy {
       financingType: this.fb.nonNullable.control<'fixed-quotes' | 'open-balance'>('fixed-quotes', [
         Validators.required,
       ]),
-      numberOfQuotes: this.fb.control<number | null>(null),
-      totalAmount: this.fb.nonNullable.control(0, [Validators.required, Validators.min(0.01)]),
+      numberOfQuotes: this.fb.control<number | null>(3), // Default to 3 quotes
       description: this.fb.nonNullable.control(''),
       items: this.fb.array([]),
     }) as FormGroup<BudgetFormGroup>;
@@ -145,17 +151,14 @@ export class BudgetFormComponent implements OnInit, OnDestroy {
       .get('financingType')
       ?.valueChanges.pipe(takeUntil(this.destroy$))
       .subscribe((type) => {
-        console.log('Financing type changed to:', type);
         if (type === 'fixed-quotes') {
           this.budgetForm.get('numberOfQuotes')?.setValidators([Validators.required, Validators.min(1)]);
           
           // Regenerate quotes if switching back to fixed-quotes with existing values
           const numberOfQuotes = this.budgetForm.get('numberOfQuotes')?.value;
-          const totalAmount = this.budgetForm.get('totalAmount')?.value || 0;
-          console.log('numberOfQuotes:', numberOfQuotes, 'totalAmount:', totalAmount);
+          const totalAmount = this.calculatedTotalAmount();
           
           if (numberOfQuotes && numberOfQuotes > 0 && totalAmount > 0) {
-            console.log('Regenerating quotes with existing numberOfQuotes');
             this.generateQuotes(totalAmount, numberOfQuotes);
           }
         } else {
@@ -171,29 +174,25 @@ export class BudgetFormComponent implements OnInit, OnDestroy {
       .get('numberOfQuotes')
       ?.valueChanges.pipe(takeUntil(this.destroy$))
       .subscribe((num) => {
-        console.log('numberOfQuotes changed to:', num);
         if (num && num > 0) {
-          const totalAmount = this.budgetForm.get('totalAmount')?.value || 0;
-          console.log('Generating quotes with totalAmount:', totalAmount);
+          const totalAmount = this.calculatedTotalAmount();
           if (totalAmount > 0) {
             this.generateQuotes(totalAmount, num);
-            console.log('Quotes after generation:', this.quotes());
           }
         }
       });
 
-    // Listen to totalAmount changes
-    this.budgetForm
-      .get('totalAmount')
-      ?.valueChanges.pipe(takeUntil(this.destroy$))
-      .subscribe((amount) => {
-        if (amount > 0) {
-          const financingType = this.budgetForm.get('financingType')?.value;
-          if (financingType === 'fixed-quotes') {
-            const numberOfQuotes = this.budgetForm.get('numberOfQuotes')?.value;
-            if (numberOfQuotes && numberOfQuotes > 0) {
-              this.generateQuotes(amount, numberOfQuotes);
-            }
+    // Listen to items array changes to regenerate quotes when items change
+    (this.budgetForm.get('items') as FormArray)
+      .valueChanges.pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        const financingType = this.budgetForm.get('financingType')?.value;
+        if (financingType === 'fixed-quotes') {
+          const numberOfQuotes = this.budgetForm.get('numberOfQuotes')?.value;
+          const totalAmount = this.calculatedTotalAmount();
+          
+          if (numberOfQuotes && numberOfQuotes > 0 && totalAmount > 0) {
+            this.generateQuotes(totalAmount, numberOfQuotes);
           }
         }
       });
@@ -232,21 +231,18 @@ export class BudgetFormComponent implements OnInit, OnDestroy {
               this.isLoading = false;
               this.cdr.markForCheck();
             } catch (error) {
-              console.error('Failed to load data:', error);
               this.errorMessage.set('Failed to load data. Please try again.');
               this.isLoading = false;
               this.cdr.markForCheck();
             }
           },
           error: (error) => {
-            console.error('Authentication error:', error);
             this.errorMessage.set('Authentication error. Please log in again.');
             this.isLoading = false;
             this.cdr.markForCheck();
           },
         });
     } catch (error) {
-      console.error('Failed to initialize form:', error);
       this.errorMessage.set('An error occurred while loading the form.');
       this.isLoading = false;
       this.cdr.markForCheck();
@@ -257,11 +253,8 @@ export class BudgetFormComponent implements OnInit, OnDestroy {
    * Generate quotes based on total amount and number of quotes
    */
   private generateQuotes(totalAmount: number, numberOfQuotes: number): void {
-    console.log('generateQuotes called with totalAmount:', totalAmount, 'numberOfQuotes:', numberOfQuotes);
     const newQuotes = this.budgetService.calculateQuotes(totalAmount, numberOfQuotes);
-    console.log('Calculated quotes:', newQuotes);
     this.quotes.set(newQuotes);
-    console.log('Quotes signal set, quotes():', this.quotes());
     this.validateQuotes();
     this.cdr.markForCheck();
   }
@@ -270,7 +263,7 @@ export class BudgetFormComponent implements OnInit, OnDestroy {
    * Validate quotes and show warning if sum doesn't match total
    */
   validateQuotes(): void {
-    const totalAmount = this.budgetForm.get('totalAmount')?.value || 0;
+    const totalAmount = this.calculatedTotalAmount();
     if (!this.budgetService.validateQuotesSum(this.quotes(), totalAmount)) {
       this.quotesValidationMessage.set(
         `Warning: Sum of quotes ($${this.quotesTotalAmount().toFixed(2)}) does not match total ($${totalAmount.toFixed(2)})`,
@@ -313,6 +306,19 @@ export class BudgetFormComponent implements OnInit, OnDestroy {
         subtotal: [0],
       }),
     );
+    // Trigger update and then regenerate quotes if needed
+    this.triggerItemsUpdate();
+    
+    // Schedule quote regeneration after subtotal calculations
+    setTimeout(() => {
+      const financingType = this.budgetForm.get('financingType')?.value;
+      const numberOfQuotes = this.budgetForm.get('numberOfQuotes')?.value;
+      const totalAmount = this.calculatedTotalAmount();
+      
+      if (financingType === 'fixed-quotes' && numberOfQuotes && numberOfQuotes > 0 && totalAmount > 0) {
+        this.generateQuotes(totalAmount, numberOfQuotes);
+      }
+    }, 0);
   }
 
   /**
@@ -321,6 +327,7 @@ export class BudgetFormComponent implements OnInit, OnDestroy {
   removeItem(index: number): void {
     const itemsArray = this.budgetForm.get('items') as FormArray;
     itemsArray.removeAt(index);
+    this.triggerItemsUpdate();
   }
 
   /**
@@ -334,7 +341,7 @@ export class BudgetFormComponent implements OnInit, OnDestroy {
         procedureName: selectedProcedure.name,
         unitPrice: selectedProcedure.basePrice,
       });
-      this.calculateItemSubtotal(index);
+      this.calculateItemSubtotalInternal(index);
     }
   }
 
@@ -347,6 +354,69 @@ export class BudgetFormComponent implements OnInit, OnDestroy {
     const unitPrice = item.get('unitPrice')?.value || 0;
     const subtotal = quantity * unitPrice;
     item.patchValue({ subtotal });
+    this.triggerItemsUpdate();
+  }
+
+  /**
+   * Update procedure when selected from dropdown
+   */
+  updateItemProcedure(index: number, event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    const procedureId = select.value;
+    this.onProcedureChange(index, procedureId);
+  }
+
+  /**
+   * Update item quantity when changed
+   */
+  updateItemQuantity(index: number, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const quantity = parseInt(input.value) || 1;
+    const item = this.itemsArray.at(index);
+    item.patchValue({ quantity });
+    this.calculateItemSubtotalInternal(index);
+  }
+
+  /**
+   * Update item unit price when changed
+   */
+  updateItemPrice(index: number, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const unitPrice = parseFloat(input.value) || 0;
+    const item = this.itemsArray.at(index);
+    item.patchValue({ unitPrice });
+    this.calculateItemSubtotalInternal(index);
+  }
+
+  /**
+   * Trigger items update signal (internal use)
+   */
+  private calculateItemSubtotalInternal(index: number): void {
+    const item = this.itemsArray.at(index);
+    const quantity = item.get('quantity')?.value || 0;
+    const unitPrice = item.get('unitPrice')?.value || 0;
+    const subtotal = quantity * unitPrice;
+    item.patchValue({ subtotal });
+    this.triggerItemsUpdate();
+  }
+
+  /**
+   * Trigger items update to notify computed signals
+   */
+  private triggerItemsUpdate(): void {
+    this.itemsChangeCounter.update((count) => count + 1);
+    this.cdr.markForCheck();
+    
+    // Regenerate quotes if in fixed-quotes mode
+    const financingType = this.budgetForm.get('financingType')?.value;
+    if (financingType === 'fixed-quotes') {
+      const numberOfQuotes = this.budgetForm.get('numberOfQuotes')?.value;
+      const totalAmount = this.calculatedTotalAmount();
+      
+      if (numberOfQuotes && numberOfQuotes > 0 && totalAmount > 0) {
+        this.generateQuotes(totalAmount, numberOfQuotes);
+      }
+    }
   }
 
   /**
@@ -378,7 +448,7 @@ export class BudgetFormComponent implements OnInit, OnDestroy {
       const formValue = this.budgetForm.getRawValue();
       const budgetData: BudgetFormData = {
         patientId: formValue.patientId,
-        totalAmount: formValue.totalAmount,
+        totalAmount: this.calculatedTotalAmount(),
         status: 'pending', // Always set to pending when creating
         items: formValue.items || [],
         financingType: formValue.financingType,
@@ -391,7 +461,6 @@ export class BudgetFormComponent implements OnInit, OnDestroy {
       alert('Budget created successfully!');
       this.router.navigate(['/budgets', budgetId]);
     } catch (error) {
-      console.error('Failed to save budget:', error);
       alert('Could not save budget. Please try again.');
     } finally {
       this.isSubmitting = false;

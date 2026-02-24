@@ -103,25 +103,21 @@ export class BudgetListComponent implements OnInit, OnDestroy {
                   this.isLoading.set(false);
                 },
                 error: (error) => {
-                  console.error('Failed to load budgets:', error);
                   this.errorMessage.set('Failed to load budgets. Please try again.');
                   this.isLoading.set(false);
                 },
               });
           } catch (error) {
-            console.error('Failed to load patients:', error);
             this.errorMessage.set('Failed to load patient data. Please try again.');
             this.isLoading.set(false);
           }
         },
         error: (error) => {
-          console.error('Authentication error:', error);
           this.errorMessage.set('Authentication error. Please log in again.');
           this.isLoading.set(false);
         },
       });
     } catch (error) {
-      console.error('Failed to load data:', error);
       this.errorMessage.set('An error occurred while loading data.');
       this.isLoading.set(false);
     }
@@ -174,7 +170,6 @@ export class BudgetListComponent implements OnInit, OnDestroy {
       await this.budgetService.deleteBudget(budgetId);
       alert('Budget deleted successfully');
     } catch (error) {
-      console.error('Failed to delete budget:', error);
       alert('Could not delete budget. Please try again.');
     }
   }
