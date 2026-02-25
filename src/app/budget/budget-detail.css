@@ -1,34 +1,19 @@
 /* Print styles for PDF generation */
 @media print {
-  .no-print {
+  button {
     display: none !important;
   }
 
   body {
-    background: white;
+    background: white !important;
   }
 
   .bg-gray-50 {
-    background: white;
+    background: white !important;
   }
 
-  .shadow-md {
-    box-shadow: none;
-  }
-
-  button {
-    display: none;
-  }
-}
-
-/* Responsive table */
-@media (max-width: 768px) {
-  table {
-    font-size: 0.875rem;
-  }
-
-  .px-4 {
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
+  .shadow-md,
+  .shadow-lg {
+    box-shadow: none !important;
   }
 }
