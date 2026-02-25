@@ -139,7 +139,7 @@ export class BudgetFormComponent implements OnInit, OnDestroy {
       financingType: this.fb.nonNullable.control<'fixed-quotes' | 'open-balance'>('fixed-quotes', [
         Validators.required,
       ]),
-      numberOfQuotes: this.fb.control<number | null>(3), // Default to 3 quotes
+      numberOfQuotes: this.fb.control<number | null>(3, [Validators.required, Validators.min(1)]), // Default to 3 quotes with validators
       description: this.fb.nonNullable.control(''),
       items: this.fb.array([]),
     }) as FormGroup<BudgetFormGroup>;
@@ -302,7 +302,7 @@ export class BudgetFormComponent implements OnInit, OnDestroy {
         procedureId: ['', Validators.required],
         procedureName: [''],
         quantity: [1, [Validators.required, Validators.min(1)]],
-        unitPrice: [0, [Validators.required, Validators.min(0)]],
+        unitPrice: [0, [Validators.min(0.01)]], // Changed: only validate min value, allow user to set price
         subtotal: [0],
       }),
     );
@@ -338,6 +338,7 @@ export class BudgetFormComponent implements OnInit, OnDestroy {
     if (selectedProcedure) {
       const item = this.itemsArray.at(index);
       item.patchValue({
+        procedureId: selectedProcedure.id,
         procedureName: selectedProcedure.name,
         unitPrice: selectedProcedure.basePrice,
       });
@@ -433,11 +434,69 @@ export class BudgetFormComponent implements OnInit, OnDestroy {
    * Save budget
    */
   async onSubmit(): Promise<void> {
-    if (this.budgetForm.invalid) {
+    console.log('=== onSubmit called ===');
+    
+    // Log patient selection
+    const patientId = this.budgetForm.get('patientId')?.value;
+    console.log('Selected patient ID:', patientId);
+    
+    if (!patientId || patientId === '') {
+      alert('Please select a patient for this budget.');
+      return;
+    }
+    
+    // Validate that at least one procedure item is added
+    const itemsArray = this.budgetForm.get('items') as FormArray;
+    console.log('Items count:', itemsArray.length);
+    
+    if (itemsArray.length === 0) {
+      alert('Please add at least one procedure to the budget.');
+      return;
+    }
+
+    // Check each item for validity
+    let hasInvalidItems = false;
+    itemsArray.controls.forEach((item, index) => {
+      const procedureId = item.get('procedureId')?.value;
+      const unitPrice = item.get('unitPrice')?.value;
+      
+      if (!procedureId || procedureId === '') {
+        console.log(`Item ${index}: Missing procedure selection`);
+        hasInvalidItems = true;
+      }
+      if (unitPrice <= 0) {
+        console.log(`Item ${index}: Invalid unit price (${unitPrice})`);
+        hasInvalidItems = true;
+      }
+    });
+    
+    if (hasInvalidItems) {
+      alert('Please ensure all procedures are selected and have valid prices.');
       this.markFormAsTouched();
       return;
     }
 
+    console.log('Form invalid:', this.budgetForm.invalid);
+    console.log('Form value:', this.budgetForm.value);
+    
+    if (this.budgetForm.invalid) {
+      console.log('Form is invalid, marking as touched');
+      
+      // Log which fields are invalid
+      Object.keys(this.budgetForm.controls).forEach(key => {
+        const control = this.budgetForm.get(key);
+        if (control?.invalid) {
+          console.log(`Invalid field: ${key}`, control.errors);
+        }
+      });
+      
+      this.markFormAsTouched();
+      return;
+    }
+
+    console.log('Financing type:', this.budgetForm.get('financingType')?.value);
+    console.log('Is quotes valid:', this.isQuotesValid());
+    
     if (this.budgetForm.get('financingType')?.value === 'fixed-quotes' && !this.isQuotesValid()) {
       alert('Please fix the quote amounts so their sum matches the total amount.');
       return;
@@ -452,15 +511,21 @@ export class BudgetFormComponent implements OnInit, OnDestroy {
         status: 'pending', // Always set to pending when creating
         items: formValue.items || [],
         financingType: formValue.financingType,
-        numberOfQuotes: formValue.numberOfQuotes || undefined,
         quotes: this.quotes(),
-        description: formValue.description || undefined,
+        description: formValue.description || '',
       };
+      
+      // Add numberOfQuotes only if it has a value (to avoid undefined)
+      if (formValue.numberOfQuotes !== null && formValue.numberOfQuotes !== undefined) {
+        budgetData.numberOfQuotes = formValue.numberOfQuotes;
+      }
 
+      console.log('Budget data to save:', budgetData);
       const budgetId = await this.budgetService.createBudget(budgetData);
       alert('Budget created successfully!');
       this.router.navigate(['/budgets', budgetId]);
     } catch (error) {
+      console.error('Error creating budget:', error);
       alert('Could not save budget. Please try again.');
     } finally {
       this.isSubmitting = false;

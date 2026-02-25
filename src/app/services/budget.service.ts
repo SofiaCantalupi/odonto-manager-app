@@ -36,6 +36,7 @@ export class BudgetService {
       updatedAt: new Date().toISOString(),
     };
 
+    console.log('Creating budget with data:', budget);
     await this.firebaseService.writeData(path, budget);
     return budgetId;
   }
