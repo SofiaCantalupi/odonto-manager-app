@@ -7,6 +7,7 @@ import { DashboardStatsComponent } from './dashboard-stats/dashboard-stats';
 import { ProceduresComponent } from './procedures/procedures';
 import { BudgetListComponent } from './budget/budget-list';
 import { BudgetFormComponent } from './budget/budget-form';
+import { BudgetDetailComponent } from './budget/budget-detail';
 
 export const routes: Routes = [
   {
@@ -21,6 +22,7 @@ export const routes: Routes = [
       { path: 'procedures', component: ProceduresComponent },
       { path: 'budgets', component: BudgetListComponent },
       { path: 'budgets/new', component: BudgetFormComponent },
+      { path: 'budgets/:id', component: BudgetDetailComponent },
     ],
   },
 ];

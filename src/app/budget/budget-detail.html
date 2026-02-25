@@ -1,0 +1,196 @@
+<div class="min-h-screen bg-gray-50 px-4 sm:px-6 lg:px-8 py-8">
+  <div class="max-w-5xl mx-auto">
+    <!-- Loading Indicator -->
+    @if (isLoading()) {
+      <div class="flex items-center justify-center min-h-screen">
+        <nz-spin [nzSimple]="true" [nzSize]="'large'" nzTip="Loading budget..."></nz-spin>
+      </div>
+    } @else {
+      <!-- Error Message -->
+      @if (errorMessage()) {
+        <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+          <span
+            nz-icon
+            nzType="exclamation-circle"
+            nzTheme="outline"
+            class="text-red-600 text-lg"
+          ></span>
+          <span class="text-red-700">{{ errorMessage() }}</span>
+        </div>
+      }
+
+      @if (budget() && patient()) {
+        <!-- Header with Actions -->
+        <div class="mb-6 flex items-center justify-between">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900">Budget Details</h1>
+            <p class="mt-2 text-gray-600">Budget ID: {{ budget()?.id }}</p>
+          </div>
+          <div class="flex gap-3">
+            <button nz-button nzType="default" (click)="goBack()">
+              <span nz-icon nzType="arrow-left" nzTheme="outline"></span>
+              Back to List
+            </button>
+            <button nz-button nzType="default" (click)="editBudget()">
+              <span nz-icon nzType="edit" nzTheme="outline"></span>
+              Edit
+            </button>
+            <button nz-button nzType="primary" (click)="printPDF()">
+              <span nz-icon nzType="printer" nzTheme="outline"></span>
+              Print PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- Budget Information Card -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Patient Information -->
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900 mb-3">Patient Information</h3>
+              <div class="space-y-2">
+                <div>
+                  <span class="text-gray-600">Name:</span>
+                  <span class="ml-2 font-medium text-gray-900">{{ getPatientName() }}</span>
+                </div>
+                <div>
+                  <span class="text-gray-600">Patient ID:</span>
+                  <span class="ml-2 font-medium text-gray-900">{{ patient()?.id }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Budget Information -->
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900 mb-3">Budget Information</h3>
+              <div class="space-y-2">
+                <div>
+                  <span class="text-gray-600">Status:</span>
+                  <nz-tag [nzColor]="getStatusColor(budget()?.status || '')" class="ml-2">
+                    {{ statusLabels[budget()?.status || ''] }}
+                  </nz-tag>
+                </div>
+                <div>
+                  <span class="text-gray-600">Created:</span>
+                  <span class="ml-2 font-medium text-gray-900">{{
+                    formatDate(budget()?.createdAt)
+                  }}</span>
+                </div>
+                <div>
+                  <span class="text-gray-600">Total Amount:</span>
+                  <span class="ml-2 font-bold text-lg text-blue-600"
+                    >${{ formatPrice(budget()?.totalAmount || 0) }}</span
+                  >
+                </div>
+                <div>
+                  <span class="text-gray-600">Financing:</span>
+                  <span class="ml-2 font-medium text-gray-900">{{
+                    financingLabels[budget()?.financingType || 'open-balance']
+                  }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Description -->
+          @if (budget()?.description) {
+            <nz-divider></nz-divider>
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900 mb-2">Description</h3>
+              <p class="text-gray-700">{{ budget()?.description }}</p>
+            </div>
+          }
+        </div>
+
+        <!-- Procedures Table -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">Procedures</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="border-b-2 border-gray-300">
+                  <th class="text-left px-4 py-3 font-semibold text-gray-700">Procedure</th>
+                  <th class="text-center px-4 py-3 font-semibold text-gray-700">Quantity</th>
+                  <th class="text-right px-4 py-3 font-semibold text-gray-700">Unit Price</th>
+                  <th class="text-right px-4 py-3 font-semibold text-gray-700">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200">
+                @for (item of budget()?.items; track $index) {
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 text-gray-900">{{ item.procedureName }}</td>
+                    <td class="px-4 py-3 text-center text-gray-900">{{ item.quantity }}</td>
+                    <td class="px-4 py-3 text-right text-gray-900">
+                      ${{ formatPrice(item.unitPrice) }}
+                    </td>
+                    <td class="px-4 py-3 text-right font-medium text-gray-900">
+                      ${{ formatPrice(item.subtotal) }}
+                    </td>
+                  </tr>
+                }
+                <tr class="bg-gray-50 font-bold">
+                  <td colspan="3" class="px-4 py-3 text-right text-gray-900">Total:</td>
+                  <td class="px-4 py-3 text-right text-blue-600 text-lg">
+                    ${{ formatPrice(budget()?.totalAmount || 0) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Financing Details -->
+        @if (
+          budget()?.financingType === 'fixed-quotes' &&
+          budget()?.quotes &&
+          budget()!.quotes!.length > 0
+        ) {
+          <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Payment Schedule</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="border-b-2 border-gray-300">
+                    <th class="text-left px-4 py-3 font-semibold text-gray-700">Quote #</th>
+                    <th class="text-right px-4 py-3 font-semibold text-gray-700">Amount</th>
+                    <th class="text-center px-4 py-3 font-semibold text-gray-700">Due Date</th>
+                    <th class="text-center px-4 py-3 font-semibold text-gray-700">Status</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  @for (quote of budget()?.quotes; track quote.number) {
+                    <tr class="hover:bg-gray-50">
+                      <td class="px-4 py-3 font-medium text-gray-900">#{{ quote.number }}</td>
+                      <td class="px-4 py-3 text-right text-gray-900">
+                        ${{ formatPrice(quote.amount) }}
+                      </td>
+                      <td class="px-4 py-3 text-center text-gray-900">
+                        {{ formatDate(quote.dueDate) }}
+                      </td>
+                      <td class="px-4 py-3 text-center">
+                        <nz-tag [nzColor]="quote.status === 'paid' ? 'green' : 'gold'">
+                          {{ quote.status === 'paid' ? 'Paid' : 'Pending' }}
+                        </nz-tag>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        } @else if (budget()?.financingType === 'open-balance') {
+          <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Financing</h3>
+            <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p class="text-blue-800">
+                <span nz-icon nzType="info-circle" nzTheme="outline" class="mr-2"></span>
+                This budget uses <strong>Open Balance</strong> financing. Payment will be managed
+                directly with the patient.
+              </p>
+            </div>
+          </div>
+        }
+      }
+    }
+  </div>
+</div>

@@ -1,0 +1,34 @@
+/* Print styles for PDF generation */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+  }
+
+  .bg-gray-50 {
+    background: white;
+  }
+
+  .shadow-md {
+    box-shadow: none;
+  }
+
+  button {
+    display: none;
+  }
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+  table {
+    font-size: 0.875rem;
+  }
+
+  .px-4 {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
