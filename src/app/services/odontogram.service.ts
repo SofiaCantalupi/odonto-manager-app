@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { FirebaseService } from '../services/firebase.service';
-import { FIREBASE_PATHS } from '../services/firebase.config';
+import { FirebaseService } from './firebase.service';
+import { FIREBASE_PATHS } from './firebase.config';
 import {
   OdontogramInitialState,
   OdontogramState,

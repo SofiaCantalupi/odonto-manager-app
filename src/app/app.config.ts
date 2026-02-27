@@ -14,7 +14,7 @@ import es from '@angular/common/locales/es';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideHttpClient } from '@angular/common/http';
 import { FirebaseService } from './services/firebase.service';
-import { OdontogramService } from './odontogram/odontogram.service';
+import { OdontogramService } from './services/odontogram.service';
 import { PatientService } from './services/patient.service';
 
 registerLocaleData(es);

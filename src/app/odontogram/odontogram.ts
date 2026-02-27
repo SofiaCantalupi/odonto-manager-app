@@ -21,7 +21,7 @@ import {
   TreatmentType,
   treatmentToCondition,
 } from '../models/dental-types';
-import { OdontogramService } from './odontogram.service';
+import { OdontogramService } from '../services/odontogram.service';
 
 @Component({
   selector: 'app-odontogram',
@@ -63,9 +63,7 @@ export class OdontogramComponent implements OnInit {
   selectedTreatment = signal<TreatmentType | null>(null);
   selectedTreatmentColor = computed(() => {
     const treatment = this.selectedTreatment();
-    return treatment
-      ? (TREATMENT_CONFIG[treatment]?.color ?? '#f3f4f6')
-      : '#f3f4f6';
+    return treatment ? (TREATMENT_CONFIG[treatment]?.color ?? '#f3f4f6') : '#f3f4f6';
   });
 
   isTreatmentModalVisible = false;

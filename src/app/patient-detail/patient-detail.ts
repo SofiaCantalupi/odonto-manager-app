@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { OdontogramComponent } from '../odontogram/odontogram';
 import { OdontogramState } from '../models/dental-types';
-import { OdontogramService } from '../odontogram/odontogram.service';
+import { OdontogramService } from '../services/odontogram.service';
 import { PatientService } from '../services/patient.service';
 
 // Patient interface
