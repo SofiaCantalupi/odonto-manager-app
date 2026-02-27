@@ -15,7 +15,7 @@ import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 
 import { BudgetService } from '../services/budget.service';
 import { PatientService, PatientListItem } from '../services/patient.service';
-import { FirebaseService } from '../services/firebase.service';
+import { SupabaseService } from '../services/supabase.service';
 import { Budget, BUDGET_STATUS_LABELS, FINANCING_TYPE_LABELS } from '../core/models/budget';
 
 @Component({
@@ -59,7 +59,7 @@ export class BudgetListComponent implements OnInit, OnDestroy {
   constructor(
     private budgetService: BudgetService,
     private patientService: PatientService,
-    private firebaseService: FirebaseService,
+    private supabaseService: SupabaseService,
   ) {}
 
   ngOnInit(): void {
@@ -80,7 +80,7 @@ export class BudgetListComponent implements OnInit, OnDestroy {
       this.errorMessage.set('');
 
       // Check if user is authenticated
-      this.firebaseService.currentUser$.pipe(takeUntil(this.destroy$)).subscribe({
+      this.supabaseService.currentUser$.pipe(takeUntil(this.destroy$)).subscribe({
         next: async (user) => {
           if (!user) {
             this.errorMessage.set('Please log in to view budgets');

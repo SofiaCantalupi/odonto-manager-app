@@ -41,7 +41,7 @@ export class SupabaseService {
     try {
       this.supabase = createClient<Database>(supabaseConfig.url, supabaseConfig.publishableKey);
 
-      // Sign in anonymously for database access (matching current Firebase flow)
+      // Sign in anonymously for database access (matching previous Firebase flow)
       this.setupAuthentication();
 
       console.log('Supabase initialized successfully');

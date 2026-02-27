@@ -13,7 +13,7 @@ import { registerLocaleData } from '@angular/common';
 import es from '@angular/common/locales/es';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideHttpClient } from '@angular/common/http';
-import { FirebaseService } from './services/firebase.service';
+import { SupabaseService } from './services/supabase.service';
 import { OdontogramService } from './services/odontogram.service';
 import { PatientService } from './services/patient.service';
 
@@ -29,7 +29,7 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideHttpClient(),
     // Services
-    FirebaseService,
+    SupabaseService,
     OdontogramService,
     PatientService,
   ],

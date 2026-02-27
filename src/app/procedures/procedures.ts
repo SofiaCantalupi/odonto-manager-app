@@ -159,7 +159,7 @@ export class ProceduresComponent implements OnInit, OnDestroy {
       basePrice: formValue.basePrice,
     };
 
-    // Only include description if it has a value (Firebase doesn't accept undefined)
+    // Only include description if it has a value (Supabase doesn't accept undefined)
     if (formValue.description && formValue.description.trim()) {
       procedureData.description = formValue.description.trim();
     }

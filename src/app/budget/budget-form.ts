@@ -26,7 +26,7 @@ import { NzInputNumberModule } from 'ng-zorro-antd/input-number';
 import { BudgetService } from '../services/budget.service';
 import { PatientService, PatientListItem } from '../services/patient.service';
 import { ProcedureService } from '../services/procedure.service';
-import { FirebaseService } from '../services/firebase.service';
+import { SupabaseService } from '../services/supabase.service';
 import { Budget, BudgetFormData, Quote, BUDGET_STATUS_LABELS, FINANCING_TYPE_LABELS } from '../core/models/budget';
 import { Procedure } from '../models/procedure';
 
@@ -117,7 +117,7 @@ export class BudgetFormComponent implements OnInit, OnDestroy {
     private budgetService: BudgetService,
     private patientService: PatientService,
     private procedureService: ProcedureService,
-    private firebaseService: FirebaseService,
+    private supabaseService: SupabaseService,
     private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
@@ -204,7 +204,7 @@ export class BudgetFormComponent implements OnInit, OnDestroy {
       this.errorMessage.set('');
 
       // Check if user is authenticated
-      this.firebaseService.currentUser$
+      this.supabaseService.currentUser$
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: async (user) => {

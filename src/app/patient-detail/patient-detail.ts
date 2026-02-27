@@ -78,7 +78,7 @@ export class PatientDetailComponent implements OnInit {
     this.loading = true;
 
     try {
-      // Load patient data from Firebase
+      // Load patient data from Supabase
       const patientData = await this.patientService.getPatient(id);
 
       if (!patientData) {
