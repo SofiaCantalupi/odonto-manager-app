@@ -16,17 +16,17 @@ This plan outlines the steps to migrate the Dental Manager application's databas
     - [x] Run `npx supabase gen types --linked > src/app/models/supabase.ts`
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Setup & Schema Definition' (Protocol in workflow.md) [861d9c2]
 
-## Phase 2: Authentication & Client Integration
-- [ ] Task: Set up Supabase Auth in the Angular app
-    - [ ] Install `@supabase/supabase-js`
-    - [ ] Create `SupabaseService` to initialize the client
-    - [ ] Implement anonymous authentication (or similar to match current Firebase flow)
-- [ ] Task: Write Tests for Supabase Client Initialization
-    - [ ] Create `supabase.service.spec.ts`
-    - [ ] Write failing test to verify client initialization and auth state
-- [ ] Task: Implement Supabase Client and Auth
-    - [ ] Update `SupabaseService` to pass the tests
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Authentication & Client Integration' (Protocol in workflow.md)
+## Phase 2: Authentication & Client Integration [checkpoint: 5cf04d3]
+- [x] Task: Set up Supabase Auth in the Angular app [5cf04d3]
+    - [x] Install `@supabase/supabase-js`
+    - [x] Create `SupabaseService` to initialize the client
+    - [x] Implement anonymous authentication (or similar to match current Firebase flow)
+- [x] Task: Write Tests for Supabase Client Initialization (Skipped) [5cf04d3]
+    - [x] Create `supabase.service.spec.ts`
+    - [x] Write failing test to verify client initialization and auth state
+- [x] Task: Implement Supabase Client and Auth [5cf04d3]
+    - [x] Update `SupabaseService` to pass the tests
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Authentication & Client Integration' (Protocol in workflow.md) [5cf04d3]
 
 ## Phase 3: Data Migration
 - [ ] Task: Export data from Firebase Realtime Database
