@@ -1,4 +1,5 @@
+import { SUPABASE_ENVIRONMENT } from "../../environments/suprabase.environment";
 export const supabaseConfig = {
-  url: 'https://kytnymghjedmjovvjkht.supabase.co',
-  publishableKey: 'sb_publishable_dUvmeK0Y7AqlNzTp9a5L4Q_T5KpR4M6',
+  url: SUPABASE_ENVIRONMENT.supabaseUrl,
+  anonKey: SUPABASE_ENVIRONMENT.supabaseAnonKey,
 };

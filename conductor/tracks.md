@@ -6,3 +6,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Migrate database from Firebase Realtime Database to Supabase (PostgreSQL)**
   *Link: [./tracks/migrate_supabase_20260227/](./tracks/migrate_supabase_20260227/)*
+
+---
+
+- [ ] **Track: Implement Email/Password Authentication with Roles (Dentist, Admin, Secretary)**
+  *Link: [./tracks/auth_email_pass_20260227/](./tracks/auth_email_pass_20260227/)*
