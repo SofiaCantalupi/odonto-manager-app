@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: Migrate database from Firebase Realtime Database to Supabase (PostgreSQL)**
+- [x] **Track: Migrate database from Firebase Realtime Database to Supabase (PostgreSQL)**
   *Link: [./tracks/migrate_supabase_20260227/](./tracks/migrate_supabase_20260227/)*
