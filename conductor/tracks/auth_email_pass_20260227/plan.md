@@ -12,15 +12,15 @@ This plan outlines the steps to implement email/password authentication and role
     - [x] Run `npx supabase gen types --linked > src/app/models/supabase.ts`
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Supabase Schema & Auth Configuration' (Protocol in workflow.md) [6a3c5c0]
 
-## Phase 2: SupabaseService Refactoring
-- [ ] Task: Update SupabaseService for email/password auth
-    - [ ] Remove anonymous sign-in logic from `SupabaseService`.
-    - [ ] Implement `signUp(email, password, role)` method.
-    - [ ] Implement `signIn(email, password)` method.
-    - [ ] Implement `signOut()` method.
-    - [ ] Implement `getProfile()` method to fetch current user's profile.
-- [ ] Task: Write tests for Auth methods (Skipped per user preference, but logic must be sound)
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: SupabaseService Refactoring' (Protocol in workflow.md)
+## Phase 2: SupabaseService Refactoring [checkpoint: b185763]
+- [x] Task: Update SupabaseService for email/password auth [b185763]
+    - [x] Remove anonymous sign-in logic from `SupabaseService`.
+    - [x] Implement `signUp(email, password, role)` method.
+    - [x] Implement `signIn(email, password)` method.
+    - [x] Implement `signOut()` method.
+    - [x] Implement `getProfile()` method to fetch current user's profile.
+- [x] Task: Write tests for Auth methods (Skipped) [b185763]
+- [x] Task: Conductor - User Manual Verification 'Phase 2: SupabaseService Refactoring' (Protocol in workflow.md) [b185763]
 
 ## Phase 3: Auth Pages (Login & Register)
 - [ ] Task: Create Register Component
