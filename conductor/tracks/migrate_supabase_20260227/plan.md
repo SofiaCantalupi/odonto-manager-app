@@ -36,20 +36,20 @@ This plan outlines the steps to migrate the Dental Manager application's databas
     - [x] Verify data count and integrity
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Data Migration' (Skipped)
 
-## Phase 4: Service Refactoring
-- [ ] Task: Update PatientService to use Supabase
-    - [ ] Write failing tests in `patient.service.spec.ts` for Supabase-based CRUD
-    - [ ] Refactor `PatientService` to use `SupabaseService`
-- [ ] Task: Update ProcedureService to use Supabase
-    - [ ] Write failing tests in `procedure.service.spec.ts` for Supabase-based CRUD
-    - [ ] Refactor `ProcedureService` to use `SupabaseService`
-- [ ] Task: Update OdontogramService to use Supabase
-    - [ ] Write failing tests in `odontogram.service.spec.ts` for Supabase-based persistence
-    - [ ] Refactor `OdontogramService` to use `SupabaseService`
-- [ ] Task: Update BudgetService to use Supabase
-    - [ ] Write failing tests in `budget.service.spec.ts` for Supabase-based CRUD
-    - [ ] Refactor `BudgetService` to use `SupabaseService`
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Service Refactoring' (Protocol in workflow.md)
+## Phase 4: Service Refactoring [checkpoint: fd749c6]
+- [x] Task: Update PatientService to use Supabase [fd749c6]
+    - [x] Write failing tests in `patient.service.spec.ts` for Supabase-based CRUD
+    - [x] Refactor `PatientService` to use `SupabaseService`
+- [x] Task: Update ProcedureService to use Supabase [fd749c6]
+    - [x] Write failing tests in `procedure.service.spec.ts` for Supabase-based CRUD
+    - [x] Refactor `ProcedureService` to use `SupabaseService`
+- [x] Task: Update OdontogramService to use Supabase [fd749c6]
+    - [x] Write failing tests in `odontogram.service.spec.ts` for Supabase-based persistence
+    - [x] Refactor `OdontogramService` to use `SupabaseService`
+- [x] Task: Update BudgetService to use Supabase [fd749c6]
+    - [x] Write failing tests in `budget.service.spec.ts` for Supabase-based CRUD
+    - [x] Refactor `BudgetService` to use `SupabaseService`
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Service Refactoring' (Protocol in workflow.md) [fd749c6]
 
 ## Phase 5: Validation & Cleanup
 - [ ] Task: Run end-to-end tests to verify functionality
