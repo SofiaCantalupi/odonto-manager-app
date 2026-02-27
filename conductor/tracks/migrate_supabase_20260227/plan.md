@@ -2,19 +2,19 @@
 
 This plan outlines the steps to migrate the Dental Manager application's database and authentication from Firebase Realtime Database to Supabase (PostgreSQL).
 
-## Phase 1: Setup & Schema Definition
-- [~] Task: Initialize Supabase project and link CLI
-    - [ ] Create a new Supabase project via the dashboard or CLI
-    - [ ] Link the local project to the Supabase project using `npx supabase link`
-- [x] Task: Define database schema (Tables: patients, procedures, selected_teeth, budgets, quotes, budget_items)
+## Phase 1: Setup & Schema Definition [checkpoint: 861d9c2]
+- [x] Task: Initialize Supabase project and link CLI [861d9c2]
+    - [x] Create a new Supabase project via the dashboard or CLI
+    - [x] Link the local project to the Supabase project using `npx supabase link`
+- [x] Task: Define database schema (Tables: patients, procedures, selected_teeth, budgets, quotes, budget_items) [861d9c2]
     - [x] Write SQL migration for `patients` table
     - [x] Write SQL migration for `procedures` table
     - [x] Write SQL migration for `selected_teeth` table
     - [x] Write SQL migration for `budgets`, `quotes`, and `budget_items` tables
     - [x] Apply migrations to the Supabase project
-- [x] Task: Generate TypeScript types for the schema
+- [x] Task: Generate TypeScript types for the schema [861d9c2]
     - [x] Run `npx supabase gen types --linked > src/app/models/supabase.ts`
-- [~] Task: Conductor - User Manual Verification 'Phase 1: Setup & Schema Definition' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Setup & Schema Definition' (Protocol in workflow.md) [861d9c2]
 
 ## Phase 2: Authentication & Client Integration
 - [ ] Task: Set up Supabase Auth in the Angular app
