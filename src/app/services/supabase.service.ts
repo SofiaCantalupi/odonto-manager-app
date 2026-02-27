@@ -1,12 +1,20 @@
 import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
+import { createClient, SupabaseClient, User, AuthError } from '@supabase/supabase-js';
 import { Database } from '../models/supabase';
 import { supabaseConfig } from './supabase.config';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable, from, map, of, switchMap } from 'rxjs';
+
+export type UserRole = Database['public']['Enums']['user_role'];
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  role: UserRole;
+}
 
 /**
- * SupabaseService - Manages Supabase client initialization and authentication
+ * SupabaseService - Manages Supabase client initialization, authentication, and profiles
  * Handles both browser and SSR environments
  */
 @Injectable({
@@ -19,6 +27,10 @@ export class SupabaseService {
   // User authentication state
   private currentUser = new BehaviorSubject<User | null>(null);
   currentUser$ = this.currentUser.asObservable();
+
+  // User profile state
+  private profile = new BehaviorSubject<UserProfile | null>(null);
+  profile$ = this.profile.asObservable();
 
   // Initialization state
   private initialized = new BehaviorSubject<boolean>(false);
@@ -41,8 +53,8 @@ export class SupabaseService {
     try {
       this.supabase = createClient<Database>(supabaseConfig.url, supabaseConfig.anonKey);
 
-      // Sign in anonymously for database access (matching previous Firebase flow)
-      this.setupAuthentication();
+      // Setup auth state listener
+      this.setupAuthStateListener();
 
       console.log('Supabase initialized successfully');
       this.initialized.next(true);
@@ -53,9 +65,9 @@ export class SupabaseService {
   }
 
   /**
-   * Setup anonymous authentication
+   * Setup auth state listener
    */
-  private async setupAuthentication(): Promise<void> {
+  private async setupAuthStateListener(): Promise<void> {
     if (!this.supabase || !isPlatformBrowser(this.platformId)) {
       return;
     }
@@ -66,26 +78,87 @@ export class SupabaseService {
     } = await this.supabase.auth.getSession();
     if (session?.user) {
       this.currentUser.next(session.user);
-      console.log('Supabase: Authenticated as:', session.user.id);
-    } else {
-      // Sign in anonymously if not authenticated
-      const { data, error } = await this.supabase.auth.signInAnonymously();
-      if (data?.user) {
-        this.currentUser.next(data.user);
-        console.log('Supabase: Signed in anonymously:', data.user.id);
-      } else if (error) {
-        console.error('Supabase: Anonymous authentication failed:', error);
-      }
+      await this.fetchProfile(session.user.id);
     }
 
     // Listen for auth changes
-    this.supabase.auth.onAuthStateChange((event, session) => {
+    this.supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log(`Supabase Auth Event: ${event}`);
       if (session?.user) {
         this.currentUser.next(session.user);
+        await this.fetchProfile(session.user.id);
       } else {
         this.currentUser.next(null);
+        this.profile.next(null);
       }
     });
+  }
+
+  /**
+   * Sign up with email and password
+   */
+  async signUp(email: string, password: string, role: UserRole): Promise<{ error: AuthError | null }> {
+    if (!this.supabase) throw new Error('Supabase not initialized');
+
+    const { data, error } = await this.supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          role: role,
+        },
+      },
+    });
+
+    return { error };
+  }
+
+  /**
+   * Sign in with email and password
+   */
+  async signIn(email: string, password: string): Promise<{ error: AuthError | null }> {
+    if (!this.supabase) throw new Error('Supabase not initialized');
+
+    const { error } = await this.supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    return { error };
+  }
+
+  /**
+   * Sign out
+   */
+  async signOut(): Promise<void> {
+    if (!this.supabase) return;
+    await this.supabase.auth.signOut();
+  }
+
+  /**
+   * Fetch user profile from public.profiles
+   */
+  private async fetchProfile(userId: string): Promise<void> {
+    if (!this.supabase) return;
+
+    const { data, error } = await this.supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching profile:', error);
+      return;
+    }
+
+    if (data) {
+      this.profile.next({
+        id: data.id,
+        email: data.email,
+        role: data.role as UserRole,
+      });
+    }
   }
 
   /**
@@ -117,5 +190,12 @@ export class SupabaseService {
    */
   isBrowser(): boolean {
     return isPlatformBrowser(this.platformId);
+  }
+
+  /**
+   * Check if user is authenticated
+   */
+  isAuthenticated(): boolean {
+    return !!this.currentUser.value;
   }
 }
