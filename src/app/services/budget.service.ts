@@ -1,17 +1,17 @@
 import { Injectable, inject } from '@angular/core';
-import { FirebaseService } from '../services/firebase.service';
-import { Budget, BudgetFormData, Quote } from '../core/models/budget';
-import { Observable, map, of, switchMap } from 'rxjs';
+import { SupabaseService } from '../services/supabase.service';
+import { Budget, BudgetFormData, Quote, BudgetItem } from '../core/models/budget';
+import { Observable, from, map } from 'rxjs';
+import { Database } from '../models/supabase';
 
 /**
- * BudgetService - Manages budget data CRUD operations with Firebase
+ * BudgetService - Manages budget data CRUD operations with Supabase
  */
 @Injectable({
   providedIn: 'root',
 })
 export class BudgetService {
-  private firebaseService = inject(FirebaseService);
-  private readonly BUDGETS_PATH = 'budgets';
+  private supabaseService = inject(SupabaseService);
 
   /**
    * Create a new budget
@@ -19,25 +19,59 @@ export class BudgetService {
    * @returns Promise with the generated budget ID
    */
   async createBudget(budgetData: BudgetFormData): Promise<string> {
-    const budgetId = this.generateBudgetId();
-    const path = `${this.BUDGETS_PATH}/${budgetId}`;
+    // 1. Create main budget record
+    const { data: budget, error: budgetError } = await this.supabaseService.client
+      .from('budgets')
+      .insert({
+        patient_id: budgetData.patientId,
+        total_amount: budgetData.totalAmount,
+        status: budgetData.status,
+        financing_type: budgetData.financingType,
+        description: budgetData.description,
+        date: new Date().toISOString(),
+      })
+      .select()
+      .single();
 
-    const budget: Budget = {
-      id: budgetId,
-      patientId: budgetData.patientId,
-      date: new Date().toISOString(),
-      totalAmount: budgetData.totalAmount,
-      status: budgetData.status,
-      items: budgetData.items,
-      financingType: budgetData.financingType,
-      quotes: budgetData.quotes,
-      description: budgetData.description,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    if (budgetError) throw budgetError;
 
-    console.log('Creating budget with data:', budget);
-    await this.firebaseService.writeData(path, budget);
+    const budgetId = budget.id;
+
+    // 2. Create budget items
+    if (budgetData.items.length > 0) {
+      const items = budgetData.items.map((item) => ({
+        budget_id: budgetId,
+        procedure_id: item.procedureId,
+        procedure_name: item.procedureName,
+        quantity: item.quantity,
+        unit_price: item.unitPrice,
+        subtotal: item.subtotal,
+      }));
+
+      const { error: itemsError } = await this.supabaseService.client
+        .from('budget_items')
+        .insert(items);
+
+      if (itemsError) throw itemsError;
+    }
+
+    // 3. Create quotes if fixed-quotes
+    if (budgetData.financingType === 'fixed-quotes' && budgetData.quotes) {
+      const quotes = budgetData.quotes.map((q) => ({
+        budget_id: budgetId,
+        number: q.number,
+        amount: q.amount,
+        due_date: q.dueDate instanceof Date ? q.dueDate.toISOString().split('T')[0] : q.dueDate,
+        status: q.status,
+      }));
+
+      const { error: quotesError } = await this.supabaseService.client
+        .from('quotes')
+        .insert(quotes);
+
+      if (quotesError) throw quotesError;
+    }
+
     return budgetId;
   }
 
@@ -47,9 +81,18 @@ export class BudgetService {
    * @returns Promise with budget data or null if not found
    */
   async getBudget(budgetId: string): Promise<Budget | null> {
-    const path = `${this.BUDGETS_PATH}/${budgetId}`;
-    const data = await this.firebaseService.readData(path);
-    return data as Budget | null;
+    const { data, error } = await this.supabaseService.client
+      .from('budgets')
+      .select('*, budget_items(*), quotes(*)')
+      .eq('id', budgetId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+
+    return this.mapSupabaseToBudget(data);
   }
 
   /**
@@ -58,20 +101,18 @@ export class BudgetService {
    * @param updates - Partial budget data to update
    */
   async updateBudget(budgetId: string, updates: Partial<BudgetFormData>): Promise<void> {
-    const path = `${this.BUDGETS_PATH}/${budgetId}`;
-    const existing = await this.firebaseService.readData(path);
+    // Update main record
+    const updateData: any = {};
+    if (updates.status) updateData.status = updates.status;
+    if (updates.description) updateData.description = updates.description;
+    updateData.updated_at = new Date().toISOString();
 
-    if (!existing) {
-      throw new Error(`Budget ${budgetId} not found`);
-    }
+    const { error } = await this.supabaseService.client
+      .from('budgets')
+      .update(updateData)
+      .eq('id', budgetId);
 
-    const updated: Budget = {
-      ...existing,
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    };
-
-    await this.firebaseService.writeData(path, updated);
+    if (error) throw error;
   }
 
   /**
@@ -79,104 +120,76 @@ export class BudgetService {
    * @param budgetId - The budget ID
    */
   async deleteBudget(budgetId: string): Promise<void> {
-    const path = `${this.BUDGETS_PATH}/${budgetId}`;
-    await this.firebaseService.deleteData(path);
+    const { error } = await this.supabaseService.client
+      .from('budgets')
+      .delete()
+      .eq('id', budgetId);
+
+    if (error) throw error;
   }
 
   /**
    * Get all budgets for a specific patient
-   * @param patientId - The patient ID
-   * @returns Promise with array of budgets
    */
   async getBudgetsByPatient(patientId: string): Promise<Budget[]> {
-    const path = this.BUDGETS_PATH;
-    const data = await this.firebaseService.readData(path);
+    const { data, error } = await this.supabaseService.client
+      .from('budgets')
+      .select('*, budget_items(*), quotes(*)')
+      .eq('patient_id', patientId)
+      .order('date', { ascending: false });
 
-    if (!data || typeof data !== 'object') {
-      return [];
-    }
-
-    return Object.values(data)
-      .filter((budget: any) => budget.patientId === patientId)
-      .sort((a: any, b: any) => {
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
-      }) as Budget[];
-  }
-
-  /**
-   * Get budgets filtered by status
-   * @param status - The status to filter by
-   * @returns Promise with array of budgets
-   */
-  async getBudgetsByStatus(status: 'pending' | 'active' | 'paid'): Promise<Budget[]> {
-    const path = this.BUDGETS_PATH;
-    const data = await this.firebaseService.readData(path);
-
-    if (!data || typeof data !== 'object') {
-      return [];
-    }
-
-    return Object.values(data)
-      .filter((budget: any) => budget.status === status)
-      .sort((a: any, b: any) => {
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
-      }) as Budget[];
-  }
-
-  /**
-   * Get budgets by patient and status
-   */
-  async getBudgetsByPatientAndStatus(
-    patientId: string,
-    status: 'pending' | 'active' | 'paid',
-  ): Promise<Budget[]> {
-    const path = this.BUDGETS_PATH;
-    const data = await this.firebaseService.readData(path);
-
-    if (!data || typeof data !== 'object') {
-      return [];
-    }
-
-    return Object.values(data)
-      .filter((budget: any) => budget.patientId === patientId && budget.status === status)
-      .sort((a: any, b: any) => {
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
-      }) as Budget[];
+    if (error) throw error;
+    return (data || []).map((b) => this.mapSupabaseToBudget(b));
   }
 
   /**
    * Get budgets stream (real-time updates)
-   * @returns Observable with array of budgets
    */
   getBudgetsStream(): Observable<Budget[]> {
-    return this.firebaseService.currentUser$.pipe(
-      switchMap(() => {
-        const path = this.BUDGETS_PATH;
-        return this.firebaseService.listenToData(path).pipe(
-          map((data) => {
-            if (!data || typeof data !== 'object') {
-              return [];
-            }
+    return from(this.getAllBudgets());
+  }
 
-            return Object.entries(data)
-              .map(([id, budgetData]: [string, any]) => ({
-                id: budgetData.id || id,
-                ...budgetData,
-              }))
-              .sort((a, b) => {
-                return new Date(b.date).getTime() - new Date(a.date).getTime();
-              }) as Budget[];
-          }),
-        );
-      }),
-    );
+  private async getAllBudgets(): Promise<Budget[]> {
+    const { data, error } = await this.supabaseService.client
+      .from('budgets')
+      .select('*, budget_items(*), quotes(*)')
+      .order('date', { ascending: false });
+
+    if (error) throw error;
+    return (data || []).map((b) => this.mapSupabaseToBudget(b));
+  }
+
+  private mapSupabaseToBudget(data: any): Budget {
+    return {
+      id: data.id,
+      patientId: data.patient_id,
+      date: data.date,
+      totalAmount: data.total_amount,
+      status: data.status,
+      items: (data.budget_items || []).map((item: any) => ({
+        procedureId: item.procedure_id,
+        procedureName: item.procedure_name || '',
+        quantity: item.quantity,
+        unitPrice: item.unit_price,
+        subtotal: item.subtotal,
+      })),
+      financingType: data.financing_type,
+      quotes: (data.quotes || [])
+        .map((q: any) => ({
+          number: q.number,
+          amount: q.amount,
+          dueDate: new Date(q.due_date),
+          status: q.status,
+        }))
+        .sort((a: any, b: any) => a.number - b.number),
+      description: data.description || undefined,
+      createdAt: data.created_at || undefined,
+      updatedAt: data.updated_at || undefined,
+    };
   }
 
   /**
-   * Calculate quotes for fixed quotes financing
-   * @param totalAmount - Total budget amount
-   * @param numberOfQuotes - Number of quotes to generate
-   * @returns Array of Quote objects
+   * Utility methods (copied from original service as they are business logic only)
    */
   calculateQuotes(totalAmount: number, numberOfQuotes: number): Quote[] {
     const quotes: Quote[] = [];
@@ -184,7 +197,7 @@ export class BudgetService {
 
     for (let i = 0; i < numberOfQuotes; i++) {
       const dueDate = new Date();
-      dueDate.setMonth(dueDate.getMonth() + i + 1); // Add 1 month for each quote
+      dueDate.setMonth(dueDate.getMonth() + i + 1);
 
       quotes.push({
         number: i + 1,
@@ -194,7 +207,6 @@ export class BudgetService {
       });
     }
 
-    // Adjust last quote to handle rounding differences
     const sumOfQuotes = quotes.reduce((sum, quote) => sum + quote.amount, 0);
     const difference = totalAmount - sumOfQuotes;
     if (difference !== 0 && quotes.length > 0) {
@@ -204,22 +216,8 @@ export class BudgetService {
     return quotes;
   }
 
-  /**
-   * Validate that sum of quote amounts equals total amount
-   * @param quotes - Array of quotes
-   * @param totalAmount - Total budget amount
-   * @returns true if valid, false otherwise
-   */
   validateQuotesSum(quotes: Quote[], totalAmount: number): boolean {
     const sum = quotes.reduce((acc, quote) => acc + quote.amount, 0);
-    return Math.abs(sum - totalAmount) < 0.01; // Allow small rounding differences
-  }
-
-  /**
-   * Generate a unique budget ID
-   * @returns Unique budget ID
-   */
-  private generateBudgetId(): string {
-    return `budget-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return Math.abs(sum - totalAmount) < 0.01;
   }
 }

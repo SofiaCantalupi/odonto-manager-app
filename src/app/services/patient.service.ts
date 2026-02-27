@@ -1,7 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { map, Observable, of, switchMap } from 'rxjs';
-import { FirebaseService } from './firebase.service';
+import { map, Observable, from } from 'rxjs';
+import { SupabaseService } from './supabase.service';
 import { Patient } from '../patient-form/patient-form';
+import { Database } from '../models/supabase';
 
 export type PatientListItem = Patient & {
   id: string;
@@ -10,39 +11,47 @@ export type PatientListItem = Patient & {
 };
 
 /**
- * PatientService - Manages patient data CRUD operations with Firebase
+ * PatientService - Manages patient data CRUD operations with Supabase
  */
 @Injectable({
   providedIn: 'root',
 })
 export class PatientService {
-  private firebaseService = inject(FirebaseService);
+  private supabaseService = inject(SupabaseService);
 
   /**
-   * Create a new patient in Firebase
+   * Create a new patient in Supabase
    * @param patient - Patient data to save
    * @returns Promise with the generated patient ID
    */
   async createPatient(patient: Patient): Promise<string> {
-    const userId = this.firebaseService.getCurrentUserId();
-    if (!userId) {
-      throw new Error('Cannot create patient: User not authenticated');
+    const { data, error } = await this.supabaseService.client
+      .from('patients')
+      .insert({
+        first_name: patient.personalData.firstName,
+        last_name: patient.personalData.lastName,
+        id_card: patient.personalData.idCard,
+        birth_date: patient.personalData.birthDate,
+        address: patient.personalData.address,
+        phone: patient.personalData.phone,
+        is_orthodontic: patient.personalData.isOrthodontic,
+        has_insurance: patient.insuranceInfo.hasInsurance,
+        insurance_name: patient.insuranceInfo.insuranceName,
+        affiliate_number: patient.insuranceInfo.affiliateNumber,
+        pathologies: patient.dentalRecord.pathologies,
+        allergies: patient.dentalRecord.allergies,
+        medication: patient.dentalRecord.medication,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating patient:', error);
+      throw error;
     }
 
-    // Generate unique patient ID
-    const patientId = this.generatePatientId(patient.personalData.idCard);
-    const path = `users/${userId}/patients/${patientId}`;
-
-    // Save patient data
-    await this.firebaseService.writeData(path, {
-      ...patient,
-      id: patientId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-
-    console.log(`Patient created with ID: ${patientId}`);
-    return patientId;
+    console.log(`Patient created with ID: ${data.id}`);
+    return data.id;
   }
 
   /**
@@ -51,14 +60,19 @@ export class PatientService {
    * @returns Promise with patient data or null if not found
    */
   async getPatient(patientId: string): Promise<Patient | null> {
-    const userId = this.firebaseService.getCurrentUserId();
-    if (!userId) {
-      throw new Error('Cannot get patient: User not authenticated');
+    const { data, error } = await this.supabaseService.client
+      .from('patients')
+      .select('*')
+      .eq('id', patientId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null; // Not found
+      console.error('Error getting patient:', error);
+      throw error;
     }
 
-    const path = `users/${userId}/patients/${patientId}`;
-    const data = await this.firebaseService.readData(path);
-    return data as Patient | null;
+    return this.mapSupabaseToPatient(data);
   }
 
   /**
@@ -67,23 +81,45 @@ export class PatientService {
    * @param patient - Updated patient data
    */
   async updatePatient(patientId: string, patient: Partial<Patient>): Promise<void> {
-    const userId = this.firebaseService.getCurrentUserId();
-    if (!userId) {
-      throw new Error('Cannot update patient: User not authenticated');
+    const updateData: any = {};
+
+    if (patient.personalData) {
+      if (patient.personalData.firstName) updateData.first_name = patient.personalData.firstName;
+      if (patient.personalData.lastName) updateData.last_name = patient.personalData.lastName;
+      if (patient.personalData.idCard) updateData.id_card = patient.personalData.idCard;
+      if (patient.personalData.birthDate) updateData.birth_date = patient.personalData.birthDate;
+      if (patient.personalData.address) updateData.address = patient.personalData.address;
+      if (patient.personalData.phone) updateData.phone = patient.personalData.phone;
+      if (patient.personalData.isOrthodontic !== undefined)
+        updateData.is_orthodontic = patient.personalData.isOrthodontic;
     }
 
-    const path = `users/${userId}/patients/${patientId}`;
-    const existing = await this.firebaseService.readData(path);
-
-    if (!existing) {
-      throw new Error(`Patient ${patientId} not found`);
+    if (patient.insuranceInfo) {
+      if (patient.insuranceInfo.hasInsurance !== undefined)
+        updateData.has_insurance = patient.insuranceInfo.hasInsurance;
+      if (patient.insuranceInfo.insuranceName)
+        updateData.insurance_name = patient.insuranceInfo.insuranceName;
+      if (patient.insuranceInfo.affiliateNumber)
+        updateData.affiliate_number = patient.insuranceInfo.affiliateNumber;
     }
 
-    await this.firebaseService.writeData(path, {
-      ...existing,
-      ...patient,
-      updatedAt: new Date().toISOString(),
-    });
+    if (patient.dentalRecord) {
+      if (patient.dentalRecord.pathologies) updateData.pathologies = patient.dentalRecord.pathologies;
+      if (patient.dentalRecord.allergies) updateData.allergies = patient.dentalRecord.allergies;
+      if (patient.dentalRecord.medication) updateData.medication = patient.dentalRecord.medication;
+    }
+
+    updateData.updated_at = new Date().toISOString();
+
+    const { error } = await this.supabaseService.client
+      .from('patients')
+      .update(updateData)
+      .eq('id', patientId);
+
+    if (error) {
+      console.error('Error updating patient:', error);
+      throw error;
+    }
 
     console.log(`Patient ${patientId} updated`);
   }
@@ -93,86 +129,89 @@ export class PatientService {
    * @param patientId - The patient ID
    */
   async deletePatient(patientId: string): Promise<void> {
-    const userId = this.firebaseService.getCurrentUserId();
-    if (!userId) {
-      throw new Error('Cannot delete patient: User not authenticated');
+    const { error } = await this.supabaseService.client
+      .from('patients')
+      .delete()
+      .eq('id', patientId);
+
+    if (error) {
+      console.error('Error deleting patient:', error);
+      throw error;
     }
 
-    const path = `users/${userId}/patients/${patientId}`;
-    await this.firebaseService.writeData(path, null);
     console.log(`Patient ${patientId} deleted`);
   }
 
   /**
-   * Get all patients for current user
+   * Get all patients
    * @returns Promise with array of patients
    */
-  async getAllPatients(): Promise<Patient[]> {
-    const userId = this.firebaseService.getCurrentUserId();
-    if (!userId) {
-      throw new Error('Cannot get patients: User not authenticated');
+  async getAllPatients(): Promise<PatientListItem[]> {
+    const { data, error } = await this.supabaseService.client
+      .from('patients')
+      .select('*')
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      console.error('Error getting patients:', error);
+      throw error;
     }
 
-    const path = `users/${userId}/patients`;
-    const data = await this.firebaseService.readData(path);
-
-    if (!data) {
-      return [];
-    }
-
-    // Convert object to array
-    return Object.values(data) as Patient[];
-  }
-
-  getPatientsStream(): Observable<PatientListItem[]> {
-    return this.firebaseService.currentUser$.pipe(
-      switchMap((user) => {
-        if (!user) {
-          return of([] as PatientListItem[]);
-        }
-
-        const path = `users/${user.uid}/patients`;
-        return this.firebaseService
-          .listenToData(path)
-          .pipe(map((data) => this.normalizePatients(data)));
-      }),
-    );
-  }
-
-  private normalizePatients(data: unknown): PatientListItem[] {
-    if (!data || typeof data !== 'object') {
-      return [];
-    }
-
-    const patientsNode = data as Record<string, unknown>;
-
-    return Object.entries(patientsNode)
-      .map(([id, raw]) => {
-        if (!raw || typeof raw !== 'object') {
-          return null;
-        }
-
-        const patient = raw as Partial<PatientListItem>;
-        return {
-          ...(patient as Patient),
-          id: typeof patient.id === 'string' && patient.id.length > 0 ? patient.id : id,
-          createdAt: typeof patient.createdAt === 'string' ? patient.createdAt : undefined,
-          updatedAt: typeof patient.updatedAt === 'string' ? patient.updatedAt : undefined,
-        } as PatientListItem;
-      })
-      .filter((patient): patient is PatientListItem => !!patient)
-      .sort((a, b) =>
-        (b.updatedAt || b.createdAt || '').localeCompare(a.updatedAt || a.createdAt || ''),
-      );
+    return (data || []).map((p) => ({
+      ...this.mapSupabaseToPatient(p),
+      id: p.id,
+      createdAt: p.created_at || undefined,
+      updatedAt: p.updated_at || undefined,
+    }));
   }
 
   /**
-   * Generate a unique patient ID based on ID card and timestamp
-   * @param idCard - Patient's ID card number
-   * @returns Unique patient ID
+   * Get patients stream (real-time updates)
+   * @returns Observable with array of patients
    */
-  private generatePatientId(idCard: string): string {
-    const normalizedId = (idCard || 'patient').trim().replace(/\s+/g, '-').toLowerCase();
-    return `${normalizedId}-${Date.now()}`;
+  getPatientsStream(): Observable<PatientListItem[]> {
+    // Note: For simplicity in this migration, we use from() to get the data once.
+    // Real-time subscriptions in Supabase can be added later if needed.
+    return from(this.getAllPatients());
+  }
+
+  /**
+   * Helper to map Supabase table row to Patient interface
+   */
+  private mapSupabaseToPatient(data: Database['public']['Tables']['patients']['Row']): Patient {
+    return {
+      personalData: {
+        firstName: data.first_name,
+        lastName: data.last_name,
+        idCard: data.id_card || '',
+        birthDate: data.birth_date || '',
+        age: this.calculateAge(data.birth_date),
+        address: data.address || '',
+        phone: data.phone || '',
+        isOrthodontic: data.is_orthodontic || false,
+      },
+      insuranceInfo: {
+        hasInsurance: data.has_insurance || false,
+        insuranceName: data.insurance_name || '',
+        affiliateNumber: data.affiliate_number || '',
+      },
+      dentalRecord: {
+        pathologies: data.pathologies || '',
+        allergies: data.allergies || '',
+        medication: data.medication || '',
+      },
+    } as Patient;
+  }
+
+  private calculateAge(birthDate: string | null): number {
+    if (!birthDate) return 0;
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
   }
 }

@@ -1,27 +1,24 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, from, map, of } from 'rxjs';
-import { FirebaseService } from './firebase.service';
-import { Procedure, ProcedureFormData } from '../models/procedure';
-import { getDatabase, ref, push, update } from 'firebase/database';
+import { Observable, from, map } from 'rxjs';
+import { SupabaseService } from './supabase.service';
+import { Procedure, ProcedureFormData, ProcedureCategory } from '../models/procedure';
+import { Database } from '../models/supabase';
 
 /**
  * ProcedureService - Handles CRUD operations for dental procedures
- * Manages procedure data persistence in Firebase Realtime Database
+ * Manages procedure data persistence in Supabase PostgreSQL
  */
 @Injectable({
   providedIn: 'root',
 })
 export class ProcedureService {
-  private firebaseService = inject(FirebaseService);
-  private readonly PROCEDURES_PATH = 'procedures';
+  private supabaseService = inject(SupabaseService);
 
   /**
    * Get all procedures as an Observable stream
    */
   getProceduresStream(): Observable<Procedure[]> {
-    return this.firebaseService
-      .listenToData(this.PROCEDURES_PATH)
-      .pipe(map((data) => this.normalizeProcedures(data)));
+    return from(this.getProcedures());
   }
 
   /**
@@ -29,25 +26,16 @@ export class ProcedureService {
    */
   async getProcedures(): Promise<Procedure[]> {
     try {
-      const data = await this.firebaseService.readData(this.PROCEDURES_PATH);
+      const { data, error } = await this.supabaseService.client
+        .from('procedures')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) throw error;
       return this.normalizeProcedures(data);
-    } catch (error: any) {
-      if (error?.message?.includes('Permission denied')) {
-        console.error(
-          '❌ Firebase Permission Denied: Please update your Firebase Realtime Database rules.\n' +
-            'See FIREBASE_SETUP.md for instructions.\n' +
-            'Quick fix: Go to Firebase Console → Realtime Database → Rules tab and use:\n' +
-            '{\n' +
-            '  "rules": {\n' +
-            '    ".read": "auth != null",\n' +
-            '    ".write": "auth != null"\n' +
-            '  }\n' +
-            '}',
-        );
-      } else {
-        console.warn('Failed to load procedures from Firebase:', error);
-      }
-      return []; // Return empty array on error
+    } catch (error) {
+      console.error('Failed to load procedures from Supabase:', error);
+      return [];
     }
   }
 
@@ -55,11 +43,18 @@ export class ProcedureService {
    * Get a single procedure by ID
    */
   async getProcedureById(id: string): Promise<Procedure | null> {
-    const data = await this.firebaseService.readData(`${this.PROCEDURES_PATH}/${id}`);
-    if (!data) {
-      return null;
+    const { data, error } = await this.supabaseService.client
+      .from('procedures')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
     }
-    return { id, ...data };
+
+    return this.mapSupabaseToProcedure(data);
   }
 
   /**
@@ -67,73 +62,92 @@ export class ProcedureService {
    * @returns The generated procedure ID
    */
   async createProcedure(procedureData: ProcedureFormData): Promise<string> {
-    // Generate a unique ID using Firebase push
-    const database = getDatabase();
-    const proceduresRef = ref(database, this.PROCEDURES_PATH);
-    const newProcedureRef = push(proceduresRef);
-    const procedureId = newProcedureRef.key!;
+    const { data, error } = await this.supabaseService.client
+      .from('procedures')
+      .insert({
+        name: procedureData.name,
+        description: procedureData.description,
+        category: procedureData.category,
+        base_price: procedureData.basePrice,
+      })
+      .select()
+      .single();
 
-    // Write the procedure data
-    await this.firebaseService.writeData(`${this.PROCEDURES_PATH}/${procedureId}`, procedureData);
-
-    return procedureId;
+    if (error) throw error;
+    return data.id;
   }
 
   /**
    * Update an existing procedure
    */
   async updateProcedure(id: string, procedureData: Partial<ProcedureFormData>): Promise<void> {
-    await this.firebaseService.writeData(`${this.PROCEDURES_PATH}/${id}`, procedureData);
+    const updateData: any = {};
+    if (procedureData.name) updateData.name = procedureData.name;
+    if (procedureData.description) updateData.description = procedureData.description;
+    if (procedureData.category) updateData.category = procedureData.category;
+    if (procedureData.basePrice !== undefined) updateData.base_price = procedureData.basePrice;
+
+    const { error } = await this.supabaseService.client
+      .from('procedures')
+      .update(updateData)
+      .eq('id', id);
+
+    if (error) throw error;
   }
 
   /**
    * Delete a procedure
    */
   async deleteProcedure(id: string): Promise<void> {
-    await this.firebaseService.deleteData(`${this.PROCEDURES_PATH}/${id}`);
+    const { error } = await this.supabaseService.client
+      .from('procedures')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
   }
 
   /**
    * Search procedures by name or category
    */
   async searchProcedures(query: string): Promise<Procedure[]> {
-    const allProcedures = await this.getProcedures();
-    const lowerQuery = query.toLowerCase().trim();
+    const { data, error } = await this.supabaseService.client
+      .from('procedures')
+      .select('*')
+      .or(`name.ilike.%${query}%,category.ilike.%${query}%,description.ilike.%${query}%`);
 
-    if (!lowerQuery) {
-      return allProcedures;
-    }
-
-    return allProcedures.filter(
-      (procedure) =>
-        procedure.name.toLowerCase().includes(lowerQuery) ||
-        procedure.category.toLowerCase().includes(lowerQuery) ||
-        procedure.description?.toLowerCase().includes(lowerQuery),
-    );
+    if (error) throw error;
+    return this.normalizeProcedures(data);
   }
 
   /**
    * Get procedures by category
    */
   async getProceduresByCategory(category: string): Promise<Procedure[]> {
-    const allProcedures = await this.getProcedures();
-    return allProcedures.filter((procedure) => procedure.category === category);
+    const { data, error } = await this.supabaseService.client
+      .from('procedures')
+      .select('*')
+      .eq('category', category);
+
+    if (error) throw error;
+    return this.normalizeProcedures(data);
   }
 
   /**
-   * Normalize Firebase data to Procedure array
+   * Normalize Supabase data to Procedure array
    */
-  private normalizeProcedures(data: Record<string, any> | null): Procedure[] {
-    if (!data) {
-      return [];
-    }
+  private normalizeProcedures(data: any[] | null): Procedure[] {
+    if (!data) return [];
+    return data.map((p) => this.mapSupabaseToProcedure(p));
+  }
 
-    return Object.entries(data).map(([id, procedureData]) => ({
-      id,
-      name: procedureData.name || '',
-      description: procedureData.description,
-      category: procedureData.category || 'general',
-      basePrice: procedureData.basePrice || 0,
-    }));
+  private mapSupabaseToProcedure(data: Database['public']['Tables']['procedures']['Row']): Procedure {
+    return {
+      id: data.id,
+      name: data.name,
+      description: data.description || undefined,
+      category: (data.category as ProcedureCategory) || 'general',
+      basePrice: data.base_price,
+    };
   }
 }
