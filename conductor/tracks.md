@@ -9,5 +9,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Implement Email/Password Authentication with Roles (Dentist, Admin, Secretary)**
+- [~] **Track: Implement Email/Password Authentication with Roles (Dentist, Admin, Secretary)**
   *Link: [./tracks/auth_email_pass_20260227/](./tracks/auth_email_pass_20260227/)*

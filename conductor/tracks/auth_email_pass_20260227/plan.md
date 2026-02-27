@@ -3,14 +3,14 @@
 This plan outlines the steps to implement email/password authentication and role-based access control using Supabase.
 
 ## Phase 1: Supabase Schema & Auth Configuration
-- [ ] Task: Create `profiles` table and role management
-    - [ ] Write SQL migration for `profiles` table with `id` (references auth.users), `role` (enum), and `email`.
-    - [ ] Create a trigger function to handle new user signups.
-    - [ ] Create a trigger on `auth.users` to call the function.
-    - [ ] Apply migrations to the Supabase project.
-- [ ] Task: Generate updated TypeScript types
-    - [ ] Run `npx supabase gen types --linked > src/app/models/supabase.ts`
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Supabase Schema & Auth Configuration' (Protocol in workflow.md)
+- [x] Task: Create `profiles` table and role management
+    - [x] Write SQL migration for `profiles` table with `id` (references auth.users), `role` (enum), and `email`.
+    - [x] Create a trigger function to handle new user signups.
+    - [x] Create a trigger on `auth.users` to call the function.
+    - [x] Apply migrations to the Supabase project.
+- [x] Task: Generate updated TypeScript types
+    - [x] Run `npx supabase gen types --linked > src/app/models/supabase.ts`
+- [~] Task: Conductor - User Manual Verification 'Phase 1: Supabase Schema & Auth Configuration' (Protocol in workflow.md)
 
 ## Phase 2: SupabaseService Refactoring
 - [ ] Task: Update SupabaseService for email/password auth
