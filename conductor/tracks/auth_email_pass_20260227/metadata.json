@@ -1,8 +1,0 @@
-{
-  "track_id": "auth_email_pass_20260227",
-  "type": "feature",
-  "status": "new",
-  "created_at": "2026-02-27T19:11:00Z",
-  "updated_at": "2026-02-27T19:11:00Z",
-  "description": "Implement Email/Password Authentication with Roles (Dentist, Admin, Secretary)"
-}
