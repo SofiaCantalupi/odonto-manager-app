@@ -33,16 +33,16 @@ This plan outlines the steps to implement email/password authentication and role
     - [x] Add basic styling using Tailwind.
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Auth Pages' (Protocol in workflow.md) [a5937af]
 
-## Phase 4: Routing & Guards
-- [ ] Task: Create AuthGuard
-    - [ ] Implement `AuthGuard` using `SupabaseService` to check auth state.
-    - [ ] Redirect to `/login` if not authenticated.
-- [ ] Task: Update App Routes
-    - [ ] Add routes for `/login` and `/register`.
-    - [ ] Protect all existing routes (`/dashboard`, `/patients`, `/budgets`, etc.) using `AuthGuard`.
-- [ ] Task: Update Header/Navigation for Logout
-    - [ ] Add "Logout" button to the main layout/dashboard.
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Routing & Guards' (Protocol in workflow.md)
+## Phase 4: Routing & Guards [checkpoint: 9d39f69]
+- [x] Task: Create AuthGuard [9d39f69]
+    - [x] Implement `AuthGuard` using `SupabaseService` to check auth state.
+    - [x] Redirect to `/login` if not authenticated.
+- [x] Task: Update App Routes [9d39f69]
+    - [x] Add routes for `/login` and `/register`.
+    - [x] Protect all existing routes (`/dashboard`, `/patients`, `/budgets`, etc.) using `AuthGuard`.
+- [x] Task: Update Header/Navigation for Logout [9d39f69]
+    - [x] Add "Logout" button to the main layout/dashboard.
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Routing & Guards' (Protocol in workflow.md) [9d39f69]
 
 ## Phase 5: Final Validation & Cleanup
 - [ ] Task: Smoke test full auth flow
