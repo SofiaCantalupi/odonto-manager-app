@@ -22,16 +22,16 @@ This plan outlines the steps to implement email/password authentication and role
 - [x] Task: Write tests for Auth methods (Skipped) [b185763]
 - [x] Task: Conductor - User Manual Verification 'Phase 2: SupabaseService Refactoring' (Protocol in workflow.md) [b185763]
 
-## Phase 3: Auth Pages (Login & Register)
-- [ ] Task: Create Register Component
-    - [ ] Implement `RegisterComponent` with form for email, password, and role.
-    - [ ] Integrate with `SupabaseService.signUp()`.
-    - [ ] Add basic styling using Tailwind.
-- [ ] Task: Create Login Component
-    - [ ] Implement `LoginComponent` with form for email and password.
-    - [ ] Integrate with `SupabaseService.signIn()`.
-    - [ ] Add basic styling using Tailwind.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Auth Pages' (Protocol in workflow.md)
+## Phase 3: Auth Pages (Login & Register) [checkpoint: a5937af]
+- [x] Task: Create Register Component [a5937af]
+    - [x] Implement `RegisterComponent` with form for email, password, and role.
+    - [x] Integrate with `SupabaseService.signUp()`.
+    - [x] Add basic styling using Tailwind.
+- [x] Task: Create Login Component [a5937af]
+    - [x] Implement `LoginComponent` with form for email and password.
+    - [x] Integrate with `SupabaseService.signIn()`.
+    - [x] Add basic styling using Tailwind.
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Auth Pages' (Protocol in workflow.md) [a5937af]
 
 ## Phase 4: Routing & Guards
 - [ ] Task: Create AuthGuard
