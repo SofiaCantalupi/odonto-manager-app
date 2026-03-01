@@ -8,11 +8,17 @@ import { ProceduresComponent } from './procedures/procedures';
 import { BudgetListComponent } from './budget/budget-list';
 import { BudgetFormComponent } from './budget/budget-form';
 import { BudgetDetailComponent } from './budget/budget-detail';
+import { LoginComponent } from './auth/login';
+import { RegisterComponent } from './auth/register';
+import { authGuard } from './auth/auth.guard';
 
 export const routes: Routes = [
+  { path: 'login', component: LoginComponent },
+  { path: 'register', component: RegisterComponent },
   {
     path: '',
     component: DashboardComponent,
+    canActivate: [authGuard],
     children: [
       { path: '', redirectTo: 'home', pathMatch: 'full' },
       { path: 'home', component: DashboardStatsComponent },
@@ -25,4 +31,5 @@ export const routes: Routes = [
       { path: 'budgets/:id', component: BudgetDetailComponent },
     ],
   },
+  { path: '**', redirectTo: '' },
 ];

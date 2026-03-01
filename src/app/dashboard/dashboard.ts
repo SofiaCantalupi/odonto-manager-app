@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import {
   LucideAngularModule,
   Calendar,
@@ -10,18 +10,12 @@ import {
   Plus,
   ClipboardList,
   DollarSign,
+  LogOut,
 } from 'lucide-angular';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { filter } from 'rxjs/operators';
-import { NavigationEnd } from '@angular/router';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
-
-interface User {
-  name: string;
-  email: string;
-  avatar: string;
-  role: string;
-}
+import { SupabaseService } from '../services/supabase.service';
 
 interface MenuItem {
   label: string;
@@ -32,11 +26,15 @@ interface MenuItem {
 
 @Component({
   selector: 'app-dashboard',
+  standalone: true,
   imports: [CommonModule, LucideAngularModule, RouterOutlet, NzButtonModule, NzLayoutModule],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
+  private router = inject(Router);
+  private supabaseService = inject(SupabaseService);
+
   // Icons
   readonly Calendar = Calendar;
   readonly Users = Users;
@@ -45,24 +43,10 @@ export class DashboardComponent {
   readonly Plus = Plus;
   readonly ClipboardList = ClipboardList;
   readonly DollarSign = DollarSign;
+  readonly LogOut = LogOut;
 
   isHomePage = true;
-
-  constructor(private router: Router) {
-    this.router.events
-      .pipe(filter((event) => event instanceof NavigationEnd))
-      .subscribe((event: NavigationEnd) => {
-        this.isHomePage = event.url === '/' || event.url === '/home';
-      });
-  }
-
-  // Mock current user
-  currentUser: User = {
-    name: 'Dr. Sarah Johnson',
-    email: 'sarah.johnson@dental.com',
-    avatar: 'https://ui-avatars.com/api/?name=Sarah+Johnson&background=0D8ABC&color=fff',
-    role: 'Dentist',
-  };
+  profile = this.supabaseService.profile$;
 
   // Navigation menu items
   menuItems: MenuItem[] = [
@@ -74,13 +58,40 @@ export class DashboardComponent {
     { label: 'Settings', icon: Settings, route: '/settings', active: false },
   ];
 
+  ngOnInit(): void {
+    this.router.events
+      .pipe(filter((event) => event instanceof NavigationEnd))
+      .subscribe((event: NavigationEnd) => {
+        const url = event.urlAfterRedirects || event.url;
+        this.isHomePage = url === '/' || url === '/home' || url === '';
+        this.updateActiveMenuItem(url);
+      });
+  }
+
+  private updateActiveMenuItem(url: string): void {
+    this.menuItems.forEach((item) => {
+      item.active = url.startsWith(item.route);
+    });
+  }
+
   onMenuItemClick(item: MenuItem): void {
-    this.menuItems.forEach((menuItem) => (menuItem.active = false));
-    item.active = true;
     this.router.navigate([item.route]);
   }
 
   onCreateNewPatient(): void {
     this.router.navigate(['/patients/new']);
+  }
+
+  async onLogout(): Promise<void> {
+    await this.supabaseService.signOut();
+    this.router.navigate(['/login']);
+  }
+
+  getUserDisplayName(email: string): string {
+    return email.split('@')[0];
+  }
+
+  getAvatarUrl(email: string): string {
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(this.getUserDisplayName(email))}&background=0D8ABC&color=fff`;
   }
 }
