@@ -45,7 +45,7 @@ This plan outlines the steps to implement email/password authentication and role
 - [x] Task: Conductor - User Manual Verification 'Phase 4: Routing & Guards' (Protocol in workflow.md) [9d39f69]
 
 ## Phase 5: Final Validation & Cleanup
-- [ ] Task: Smoke test full auth flow
-    - [ ] Test registration, login, logout, and route protection.
-- [ ] Task: Run `ng build` to ensure no compilation errors.
-- [ ] Task: Conductor - User Manual Verification 'Phase 5: Final Validation & Cleanup' (Protocol in workflow.md)
+- [x] Task: Smoke test full auth flow
+    - [x] Test registration, login, logout, and route protection.
+- [x] Task: Run `ng build` to ensure no compilation errors.
+- [~] Task: Conductor - User Manual Verification 'Phase 5: Final Validation & Cleanup' (Protocol in workflow.md)
