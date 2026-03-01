@@ -16,11 +16,11 @@
   --color-warning: #f59e0b;
 
   /* Spacing */
-  --spacing-xs: 0.5rem;
-  --spacing-sm: 1rem;
-  --spacing-md: 1.5rem;
-  --spacing-lg: 2rem;
-  --spacing-xl: 3rem;
+  --app-spacing-xs: 0.5rem;
+  --app-spacing-sm: 1rem;
+  --app-spacing-md: 1.5rem;
+  --app-spacing-lg: 2rem;
+  --app-spacing-xl: 3rem;
 }
 
 body {

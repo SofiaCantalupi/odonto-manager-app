@@ -22,29 +22,32 @@ import { NzMessageService } from 'ng-zorro-antd/message';
     NzSelectModule,
   ],
   template: `
-    <div class="flex min-h-screen items-center justify-center bg-gray-100 p-4">
-      <div class="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
-        <h2 class="mb-6 text-center text-2xl font-bold text-gray-800">Create Account</h2>
+    <div class="flex min-h-screen items-center justify-center bg-linear-to-br from-blue-600 to-indigo-800 p-4 font-sans">
+      <div class="w-full max-w-md rounded-2xl bg-white p-10 shadow-2xl">
+        <div class="mb-8 text-center">
+          <h1 class="text-3xl font-extrabold tracking-tight text-gray-900">Create Account</h1>
+          <p class="mt-2 text-sm text-gray-500 font-medium">Join our dental management platform.</p>
+        </div>
         
         <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" nz-form nzLayout="vertical">
-          <nz-form-item>
-            <nz-form-label nzRequired>Email</nz-form-label>
+          <nz-form-item class="mb-4">
+            <nz-form-label nzRequired class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Email Address</nz-form-label>
             <nz-form-control nzErrorTip="Please enter a valid email">
-              <input nz-input formControlName="email" placeholder="email@example.com" type="email" />
+              <input nz-input formControlName="email" placeholder="dr.smith@example.com" type="email" class="rounded-lg py-2.5 px-4" />
             </nz-form-control>
           </nz-form-item>
 
-          <nz-form-item>
-            <nz-form-label nzRequired>Password</nz-form-label>
+          <nz-form-item class="mb-4">
+            <nz-form-label nzRequired class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Password</nz-form-label>
             <nz-form-control nzErrorTip="Password must be at least 6 characters">
-              <input nz-input formControlName="password" placeholder="Min 6 characters" type="password" />
+              <input nz-input formControlName="password" placeholder="Min 6 characters" type="password" class="rounded-lg py-2.5 px-4" />
             </nz-form-control>
           </nz-form-item>
 
-          <nz-form-item>
-            <nz-form-label nzRequired>Role</nz-form-label>
-            <nz-form-control nzErrorTip="Please select a role">
-              <nz-select formControlName="role" nzPlaceHolder="Select your role">
+          <nz-form-item class="mb-6">
+            <nz-form-label nzRequired class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Professional Role</nz-form-label>
+            <nz-form-control nzErrorTip="Please select your role">
+              <nz-select formControlName="role" nzPlaceHolder="Select your role" class="rounded-lg h-auto overflow-hidden">
                 <nz-option nzValue="dentist" nzLabel="Dentist"></nz-option>
                 <nz-option nzValue="admin" nzLabel="Admin"></nz-option>
                 <nz-option nzValue="secretary" nzLabel="Secretary"></nz-option>
@@ -52,15 +55,15 @@ import { NzMessageService } from 'ng-zorro-antd/message';
             </nz-form-control>
           </nz-form-item>
 
-          <button nz-button nzType="primary" class="mt-4 w-full" [nzLoading]="loading()" [disabled]="registerForm.invalid">
-            Register
+          <button nz-button nzType="primary" class="w-full rounded-lg py-6 font-bold text-base shadow-lg transition-transform active:scale-95 mt-2" [nzLoading]="loading()" [disabled]="registerForm.invalid">
+            Register Account
           </button>
         </form>
 
-        <div class="mt-6 text-center">
+        <div class="mt-8 border-t border-gray-100 pt-6 text-center">
           <p class="text-sm text-gray-600">
             Already have an account? 
-            <a routerLink="/login" class="font-medium text-blue-600 hover:text-blue-500">Log in</a>
+            <a routerLink="/login" class="font-bold text-blue-600 hover:text-blue-700 transition-colors">Log in</a>
           </p>
         </div>
       </div>

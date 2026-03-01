@@ -20,34 +20,37 @@ import { NzMessageService } from 'ng-zorro-antd/message';
     NzButtonModule,
   ],
   template: `
-    <div class="flex min-h-screen items-center justify-center bg-gray-100 p-4">
-      <div class="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
-        <h2 class="mb-6 text-center text-2xl font-bold text-gray-800">Login</h2>
+    <div class="flex min-h-screen items-center justify-center bg-linear-to-br from-blue-600 to-indigo-800 p-4 font-sans">
+      <div class="w-full max-w-md rounded-2xl bg-white p-10 shadow-2xl">
+        <div class="mb-10 text-center">
+          <h1 class="text-3xl font-extrabold tracking-tight text-gray-900">DentalManager</h1>
+          <p class="mt-2 text-sm text-gray-500 font-medium">Welcome back! Please enter your details.</p>
+        </div>
         
         <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" nz-form nzLayout="vertical">
-          <nz-form-item>
-            <nz-form-label nzRequired>Email</nz-form-label>
-            <nz-form-control nzErrorTip="Please enter a valid email">
-              <input nz-input formControlName="email" placeholder="email@example.com" type="email" />
+          <nz-form-item class="mb-6">
+            <nz-form-label nzRequired class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Email Address</nz-form-label>
+            <nz-form-control nzErrorTip="Please enter a valid email address">
+              <input nz-input formControlName="email" placeholder="dr.smith@example.com" type="email" class="rounded-lg py-2.5 px-4" />
             </nz-form-control>
           </nz-form-item>
 
-          <nz-form-item>
-            <nz-form-label nzRequired>Password</nz-form-label>
+          <nz-form-item class="mb-8">
+            <nz-form-label nzRequired class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Password</nz-form-label>
             <nz-form-control nzErrorTip="Please enter your password">
-              <input nz-input formControlName="password" placeholder="Your password" type="password" />
+              <input nz-input formControlName="password" placeholder="••••••••" type="password" class="rounded-lg py-2.5 px-4" />
             </nz-form-control>
           </nz-form-item>
 
-          <button nz-button nzType="primary" class="mt-4 w-full" [nzLoading]="loading()" [disabled]="loginForm.invalid">
-            Log in
+          <button nz-button nzType="primary" class="w-full rounded-lg py-6 font-bold text-base shadow-lg transition-transform active:scale-95" [nzLoading]="loading()" [disabled]="loginForm.invalid">
+            Sign In
           </button>
         </form>
 
-        <div class="mt-6 text-center">
+        <div class="mt-10 border-t border-gray-100 pt-8 text-center">
           <p class="text-sm text-gray-600">
             Don't have an account? 
-            <a routerLink="/register" class="font-medium text-blue-600 hover:text-blue-500">Sign up</a>
+            <a routerLink="/register" class="font-bold text-blue-600 hover:text-blue-700 transition-colors">Create an account</a>
           </p>
         </div>
       </div>
